@@ -204,3 +204,24 @@ Deno.test("structArray", () => {
   assertEquals(el1.y, 0x05)
   assertEquals(el2, undefined)
 })
+
+Deno.test("dynamicLength", () => {
+  const El = defineStruct({
+    x: i8(0),
+    y: i8(2),
+  })
+  const ElArray = defineArray({ struct: El, byteStride: 3 })
+  const buf1 = new Uint8Array(9)
+  const ar1 = new ElArray(buf1)
+  const buf2 = new Uint8Array(21)
+  const ar2 = new ElArray(buf2)
+
+  assertEquals(ar1.length, 3)
+  assertEquals(ar2.length, 7)
+
+  ar1[2].x = -21
+  assertEquals(buf1[6], 235)
+
+  ar2[6].y = -67
+  assertEquals(buf2[20], 189)
+})

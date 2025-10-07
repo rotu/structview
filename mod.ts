@@ -369,15 +369,18 @@ export function defineStruct<const Props extends PropertyDescriptorMap>(
 }
 
 /**
- * Create a new struct subclass for a statically-sized array of structs
+ * Create a new struct subclass for an array of structs
  * @param arrayOptions
- * @returns
+ * @returns A new class, inheriting from `Struct` whose elements are statically typed structs
  */
 export function defineArray<Ctor extends StructConstructor<object>>(
   arrayOptions: {
+    /** Constructor for an object view of each element*/
     struct: Ctor
+    /** Number of bytes between the start of consecutive elements */
     byteStride: number
-    length: number
+    /** Total number of elements in the array (not bytes) */
+    length?: number
   },
 ): StructConstructor<
   {
@@ -387,23 +390,37 @@ export function defineArray<Ctor extends StructConstructor<object>>(
   } & Iterable<InstanceType<Ctor>>
 > {
   const { struct, byteStride, length } = arrayOptions
-  class StructArray extends Struct {
-    static {
-      for (let i = 0; i < length; ++i) {
-        Object.defineProperty(this.prototype, i, {
-          get() {
-            return this.element(i)
-          },
-          enumerable: true,
-        })
+
+  // Define a subclass of Struct which translates array-like index access into element access
+  // x[2] -> x.element(2)
+  const ProxiedStruct = function (
+    ...args: ConstructorParameters<typeof Struct>
+  ) {
+    return Reflect.construct(Struct, args, new.target)
+  } as unknown as StructConstructor<Struct & { [i: number]: Ctor }>
+
+  ProxiedStruct.prototype = new Proxy(Struct.prototype, {
+    get(target, p, receiver) {
+      if (typeof p === "string") {
+        const i = parseInt(p)
+        if (p === String(i)) {
+          return receiver.element(i)
+        }
       }
-    }
+      return Reflect.get(target, p, receiver)
+    },
+  })
+
+  class StructArray extends ProxiedStruct {
     #struct = struct
     #length = length
     #byteStride = byteStride
 
     get length() {
-      return this.#length
+      if (typeof this.#length === "number") {
+        return this.#length
+      }
+      return structDataView(this).byteLength / this.#byteStride
     }
     element(i: number) {
       const ctor = this.#struct
