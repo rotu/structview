@@ -1,3 +1,8 @@
+/**
+ * Property descriptor factories for big-endian numbers
+ * @module
+ */
+
 import { structDataView, type StructPropertyDescriptor } from "./mod.ts"
 
 /**
