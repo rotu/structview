@@ -179,6 +179,21 @@ Deno.test("bad property descriptor", () => {
   })
 })
 
+Deno.test("arrayRelative", () => {
+  const bytes = new Uint8Array(Array(255).keys())
+  const El = defineStruct({
+    x: u8(2),
+  })
+  const ElArray = defineArray({ struct: El, byteStride: 3, length: 3 })
+  const Cls = defineStruct({
+    els: substruct(ElArray, 5),
+  })
+  const instance = new Cls(bytes)
+  assertEquals(instance.els.element(0).x, 2 + 0 * 3 + 5)
+  assertEquals(instance.els.element(1).x, 2 + 1 * 3 + 5)
+  assertEquals(instance.els.element(2).x, 2 + 2 * 3 + 5)
+})
+
 Deno.test("structArray", () => {
   const El = defineStruct({
     x: u8(0),
