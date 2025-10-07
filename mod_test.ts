@@ -169,3 +169,11 @@ Deno.test("floats", () => {
   assertEquals(v.f32, Math.fround(1 / 3))
   assertEquals(v.f64, 1 / 3)
 })
+
+Deno.test("bad property descriptor", () => {
+  assertThrows(() => {
+    defineStruct({
+      a: { value: 10, get: () => 42 },
+    })
+  })
+})

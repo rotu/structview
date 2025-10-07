@@ -26,11 +26,11 @@ type SubclassWithProperties<
 type TPropertyDescriptor<T> = {
   enumerable?: boolean
   configurable?: boolean
+  get?(): T
+  set?(t: T): undefined
   value?: T
   writable?: boolean
-  get?(): T
-  set?(t: T): void
-} & ({ value?: never; writable?: never } | { get?: never; set?: never })
+}
 
 type MixinFromProps<Props extends object> = {
   [K in keyof Props]: Props[K] extends TPropertyDescriptor<infer V> ? V
@@ -98,7 +98,6 @@ export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
     },
     set(value) {
       structDataView(this).setUint8(fieldOffset, value)
-      return true
     },
   }
 }
