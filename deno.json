@@ -1,6 +1,6 @@
 {
   "name": "@rotu/structview",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "tasks": {
     "dev": "deno test --watch"
@@ -12,6 +12,7 @@
     "@std/assert": "jsr:@std/assert@1"
   },
   "exports": {
-    ".": "./mod.ts"
+    ".": "./mod.ts",
+    "./bigendian": "./bigendian.ts"
   }
 }

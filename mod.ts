@@ -42,7 +42,7 @@ type MixinFromProps<Props extends object> = {
  * @param struct
  * @returns
  */
-function structDataView(struct: AnyStruct) {
+export function structDataView(struct: AnyStruct): DataView {
   const result = struct[dataViewSymbol]
   if (!(result instanceof DataView)) {
     throw new TypeError("not a struct")
@@ -68,7 +68,9 @@ function structBytes(struct: AnyStruct, start?: number, end?: number) {
 /**
  * Type of a property descriptor for a struct
  */
-type StructPropertyDescriptor<T> = ThisType<AnyStruct> & TPropertyDescriptor<T>
+export type StructPropertyDescriptor<T> =
+  & ThisType<AnyStruct>
+  & TPropertyDescriptor<T>
 
 /**
  * Define a descriptor based on a dataview of the struct
@@ -102,7 +104,7 @@ export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 /**
- * Field for a 16-bit unsigned integer
+ * Field for a little-endian 16-bit unsigned integer
  */
 export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -116,7 +118,7 @@ export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 /**
- * Field for a 32-bit unsigned integer
+ * Field for a little-endian 32-bit unsigned integer
  */
 export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -130,7 +132,7 @@ export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 /**
- * Field for a 64-bit unsigned integer
+ * Field for a little-endian 64-bit unsigned integer
  */
 export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
@@ -144,7 +146,7 @@ export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   }
 }
 /**
- * Field for a 8-bit signed integer
+ * Field for a little-endian 8-bit signed integer
  */
 export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -158,7 +160,7 @@ export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 /**
- * Field for a 16-bit signed integer
+ * Field for a little-endian 16-bit signed integer
  */
 export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -172,7 +174,7 @@ export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 /**
- * Field for a 32-bit signed integer
+ * Field for a little-endian 32-bit signed integer
  */
 export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -186,7 +188,7 @@ export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 /**
- * Field for a 64-bit signed integer
+ * Field for a little-endian 64-bit signed integer
  */
 export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
@@ -201,7 +203,7 @@ export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
 }
 
 /**
- * Field for a 16-bit binary float (float16_t)
+ * Field for a little-endian 16-bit binary float (float16_t)
  */
 export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -216,7 +218,7 @@ export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
 }
 
 /**
- * Field for a 32-bit binary float (float32_t)
+ * Field for a little-endian 32-bit binary float (float32_t)
  */
 export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -231,7 +233,7 @@ export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
 }
 
 /**
- * Field for a 64-bit binary float (float64_t)
+ * Field for a little-endian 64-bit binary float (float64_t)
  */
 export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
@@ -246,7 +248,7 @@ export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
 }
 
 /**
- * Field for a fixed-length string
+ * Field for a UTF-8 fixed-length string
  */
 export function string(
   fieldOffset: number,
