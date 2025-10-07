@@ -1,0 +1,390 @@
+/**
+ * Strongly typed classes for accessing binary data in a structured way
+ * @module
+ */
+
+const dataViewSymbol = Symbol.for("Struct.dataview");
+type AnyStruct = {
+  get [dataViewSymbol](): DataView;
+};
+
+// deno-lint-ignore no-explicit-any
+type AnyConstructor = { new (...args: any[]): any };
+// deno-lint-ignore no-explicit-any
+type ObjectConstructor = { new(...args: any[]): object };
+// deno-lint-ignore no-explicit-any
+type Constructor<T> = { new (...args: any[]): T };
+
+
+type SubclassWithProperties<
+  Ctor extends Constructor<object>,
+  Mixin,
+> =
+  & { [K in keyof Ctor]: Ctor[K] }
+  & {
+    new (
+      ...args: ConstructorParameters<Ctor>
+    ): InstanceType<Ctor> & { -readonly [K in keyof Mixin]: Mixin[K] };
+  };
+
+type Z = SubclassWithProperties<typeof Object, { x:number}>
+declare const z: InstanceType<Z>
+
+type TPropertyDescriptor<T> =
+  | {
+    enumerable?: boolean
+    configurable?: boolean
+    value: T
+    writable?: boolean
+    get?: undefined
+    set?: undefined
+  }
+  | {
+    enumerable?: boolean
+    configurable?: boolean
+    value?: undefined
+    writable?: undefined
+    get(): T
+    set?(value: T): void
+  }
+  ;
+
+type TypedDescriptorMap<This, Mixin> = {
+  [K in keyof Mixin]: ThisType<This> & TPropertyDescriptor<Mixin[K]>;
+};
+
+type InstanceWithProps<
+  Base,
+  Mixin,
+> =
+  & Exclude<Base, keyof Mixin>
+  & { -readonly [K in keyof Mixin]: Mixin[K] };
+
+/**
+ * Get the underlying DataView of a struct
+ * @param struct
+ * @returns
+ */
+function structDataView(struct: AnyStruct) {
+  const result = struct[dataViewSymbol];
+  if (!(result instanceof DataView)) {
+    throw new TypeError("not a struct");
+  }
+  return struct[dataViewSymbol];
+}
+/**
+ * Helper method to create a view of a contiguous subregion of a Struct's memory
+ * @param struct
+ * @param start
+ * @param end
+ * @returns region of the given struct.
+ */
+function structBytes(struct: AnyStruct, start?: number, end?: number) {
+  const dv = structDataView(struct);
+  start ??= 0;
+  end ??= dv.byteLength;
+  console.assert(start <= end);
+  console.assert(end <= dv.byteLength);
+  return new Uint8Array(dv.buffer, dv.byteOffset + start, end - start);
+}
+
+// A property descriptor that can be applied to a struct
+type StructPropertyDescriptor<T> = ThisType<AnyStruct> & TPropertyDescriptor<T>;
+
+export function fromDataView<T, Fn extends (dv: DataView)=>T>(
+  fieldGetter: Fn,
+): StructPropertyDescriptor<T> {
+  return {
+    enumerable: true,
+    get() {
+      const dv = this[dataViewSymbol]
+      return fieldGetter(dv);
+    },
+  };
+}
+
+/**
+ * Field for a 8-bit unsigned integer
+ */
+export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getUint8(fieldOffset);
+    },
+    set(value) {
+      structDataView(this).setUint8(fieldOffset, value);
+      return true;
+    },
+  };
+}
+/**
+ * Field for a 16-bit unsigned integer
+ */
+export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getUint16(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setUint16(fieldOffset, value, true);
+    },
+  };
+}
+/**
+ * Field for a 32-bit unsigned integer
+ */
+export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getUint32(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setUint32(fieldOffset, value, true);
+    },
+  };
+}
+/**
+ * Field for a 64-bit unsigned integer
+ */
+export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getBigUint64(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setBigUint64(fieldOffset, value, true);
+    },
+  };
+}
+/**
+ * Field for a 8-bit signed integer
+ */
+export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getInt8(fieldOffset);
+    },
+    set(value) {
+      structDataView(this).setInt8(fieldOffset, value);
+    },
+  };
+}
+/**
+ * Field for a 16-bit signed integer
+ */
+export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getInt16(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setInt16(fieldOffset, value, true);
+    },
+  };
+}
+/**
+ * Field for a 32-bit signed integer
+ */
+export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getInt32(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setInt32(fieldOffset, value, true);
+    },
+  };
+}
+/**
+ * Field for a 64-bit signed integer
+ */
+export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getBigInt64(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setBigInt64(fieldOffset, value, true);
+    },
+  };
+}
+
+/**
+ * Field for a 16-bit binary float (float16_t)
+ */
+export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getFloat16(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setFloat16(fieldOffset, value, true);
+    },
+  };
+}
+
+/**
+ * Field for a 32-bit binary float (float32_t)
+ */
+export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getFloat32(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setFloat32(fieldOffset, value, true);
+    },
+  };
+}
+
+/**
+ * Field for a 64-bit binary float (float64_t)
+ */
+export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
+  return {
+    enumerable: true,
+    get() {
+      return structDataView(this).getFloat64(fieldOffset, true);
+    },
+    set(value) {
+      structDataView(this).setFloat64(fieldOffset, value, true);
+    },
+  };
+}
+
+/**
+ * Field for a fixed-length string
+ */
+export function string(
+  fieldOffset: number,
+  byteLength: number,
+): StructPropertyDescriptor<string> {
+  const TEXT_DECODER = new TextDecoder();
+  const TEXT_ENCODER = new TextEncoder();
+  return {
+    enumerable: true,
+    get() {
+      const str = TEXT_DECODER.decode(
+        structBytes(this, fieldOffset, fieldOffset + byteLength),
+      );
+      // trim all trailing null characters
+      return str.replace(/\0+$/, "");
+    },
+    set(value) {
+      const bytes = structBytes(
+        this,
+        fieldOffset,
+        fieldOffset + byteLength,
+      );
+      bytes.fill(0);
+      TEXT_ENCODER.encodeInto(value, bytes);
+    },
+  };
+}
+
+type StructConstructor<T extends object> = {
+  new (arg: {
+    buffer: ArrayBufferLike;
+    byteOffset?: number;
+    byteLength?: number;
+  }): T;
+};
+/**
+ * Field for an embedded struct
+ * @param ctor constructor for the inner struct
+ * @param byteOffset where the inner struct starts relative to the outer struct
+ * @param bytelength the length in bytes of the inner struct
+ * @returns property descriptor for a struct
+ */
+export function substruct<
+  T extends object,
+  Ctor extends StructConstructor<object>,
+>(
+  ctor: Ctor,
+  byteOffset?: number,
+  bytelength?: number,
+): StructPropertyDescriptor<T> {
+  return fromDataView(
+    (dv) => {
+      const offset2 = dv.byteOffset + (byteOffset ?? 0);
+      const bytelength2 = bytelength ?? (dv.byteLength - (byteOffset ?? 0));
+      return new ctor({
+        buffer: dv.buffer,
+        byteOffset: offset2,
+        byteLength: bytelength2,
+      }) as T;
+    },
+  );
+}
+
+/**
+ * Base class for a structured binary object
+ * Note there are no predeclared string-keyed properties - all property names are reserved for user-defined fields
+ */
+export class Struct {
+  [dataViewSymbol]: DataView;
+  get [Symbol.toStringTag](): string {
+    return Struct.name;
+  }
+  static toDataView(o: Struct): DataView {
+    return o[dataViewSymbol];
+  }
+  constructor(arg: {
+    buffer: ArrayBufferLike;
+    byteOffset?: number;
+    byteLength?: number;
+  }) {
+    Object.preventExtensions(this);
+    this[dataViewSymbol] = new DataView(
+      arg.buffer,
+      arg.byteOffset,
+      arg.byteLength,
+    );
+  }
+}
+
+/**
+ * Subclass a type by adding the given property descriptors
+ * @param ctor constructor for the base class
+ * @param propertyDescriptors properties to add to subclass instances
+ * @returns A new class, inheriting from the base class, with the new property descriptors added
+ */
+function subclassWithProperties<
+  const Ctor extends AnyConstructor,
+  Mixin,
+>(
+  ctor: Ctor,
+  propertyDescriptors: TypedDescriptorMap<InstanceType<Ctor>, Mixin>,
+): SubclassWithProperties<Ctor, Mixin> {
+  const Sub = class extends (<AnyConstructor> ctor) {
+    static {
+      Object.defineProperties(this.prototype, propertyDescriptors);
+    }
+  };
+  return Sub as SubclassWithProperties<Ctor, Mixin>;
+}
+
+/**
+ * Subclass struct by adding the given property descriptors
+ * @param propertyDescriptors properties to add to subclass instances
+ * @returns A new class, inheriting from `Struct`, with the new property descriptors added
+ */
+export function defineStructClass<const Mixin extends object>(
+  propertyDescriptors: TypedDescriptorMap<Struct, Mixin>,
+): SubclassWithProperties<typeof Struct, Mixin> {
+  return subclassWithProperties(Struct, propertyDescriptors);
+}
+
+type StructClassFor<const Mixin extends object>(
+  propertyDescriptors: TypedDescriptorMap<Struct, Mixin>,
+): SubclassWithProperties<typeof Struct, Mixin> {

@@ -1,0 +1,14 @@
+{
+  "name": "@rotu/structview",
+  "version": "0.1.0",
+  "license": "MIT",
+  "tasks": {
+    "dev": "deno test --watch"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  },
+  "exports": {
+    ".": "./mod.ts"
+  }
+}
