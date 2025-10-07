@@ -367,3 +367,56 @@ export function defineStruct<const Props extends PropertyDescriptorMap>(
 ): SubclassWithProperties<typeof Struct, MixinFromProps<Props>> {
   return subclassWithProperties(Struct, propertyDescriptors)
 }
+
+/**
+ * Create a new struct subclass for a statically-sized array of structs
+ * @param arrayOptions
+ * @returns
+ */
+export function defineArray<Ctor extends StructConstructor<object>>(
+  arrayOptions: {
+    struct: Ctor
+    byteStride: number
+    length: number
+  },
+): StructConstructor<
+  {
+    get length(): number
+    element(i: number): InstanceType<Ctor>
+    [i: number]: InstanceType<Ctor>
+  } & Iterable<InstanceType<Ctor>>
+> {
+  const { struct, byteStride, length } = arrayOptions
+  class StructArray extends Struct {
+    static {
+      for (let i = 0; i < length; ++i) {
+        Object.defineProperty(this.prototype, i, {
+          get() {
+            return this.element(i)
+          },
+          enumerable: true,
+        })
+      }
+    }
+    #struct = struct
+    #length = length
+    #byteStride = byteStride
+
+    get length() {
+      return this.#length
+    }
+    element(i: number) {
+      const ctor = this.#struct
+      return new ctor(
+        structBytes(this, this.#byteStride * i, this.#byteStride * (i + 1)),
+      )
+    }
+    *[Symbol.iterator]() {
+      for (let i = 0; i < this.length; ++i) {
+        yield this.element(i)
+      }
+    }
+  }
+  // deno-lint-ignore no-explicit-any
+  return StructArray as any
+}

@@ -1,4 +1,5 @@
 import {
+  defineArray,
   defineStruct,
   f16,
   f32,
@@ -176,4 +177,30 @@ Deno.test("bad property descriptor", () => {
       a: { value: 10, get: () => 42 },
     })
   })
+})
+
+Deno.test("structArray", () => {
+  const El = defineStruct({
+    x: u8(0),
+    y: u8(2),
+  })
+  const ElArray = defineArray({ struct: El, byteStride: 3, length: 2 })
+  const buf = new Uint8Array(6)
+  for (let i = 0; i < buf.length; ++i) {
+    buf[i] = i
+  }
+  const ar = new ElArray(buf)
+  assertEquals(ar.length, 2)
+  assertEquals(ar[0].x, 0x00)
+  assertEquals(ar[0].y, 0x02)
+  assertEquals(ar[1].x, 0x03)
+  assertEquals(ar[1].y, 0x05)
+
+  // and that iteration/unpacking works
+  const [el0, el1, el2] = ar
+  assertEquals(el0.x, 0x00)
+  assertEquals(el0.y, 0x02)
+  assertEquals(el1.x, 0x03)
+  assertEquals(el1.y, 0x05)
+  assertEquals(el2, undefined)
 })
