@@ -381,7 +381,7 @@ export function defineArray<Ctor extends StructConstructor<object>>(
     struct: Ctor
     /** Number of bytes between the start of consecutive elements */
     byteStride: number
-    /** Total number of elements in the array (not bytes) */
+    /** Total number of elements in the array (not bytes). If omitted, the array length will depend on the size of its underlying buffer */
     length?: number
   },
 ): StructConstructor<

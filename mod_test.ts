@@ -240,3 +240,31 @@ Deno.test("dynamicLength", () => {
   ar2[6].y = -67
   assertEquals(buf2[20], 189)
 })
+
+Deno.test("can copy", () => {
+  const bytes = new Uint8Array(48)
+  const Entree = defineStruct({
+    price: f32(0),
+    name: string(4, 12),
+  })
+  const Menu = defineArray({
+    struct: Entree,
+    byteStride: 16,
+    length: 3,
+  })
+
+  const myMenu = new Menu(bytes)
+  Object.assign(myMenu.element(0), { name: "garden salad", price: 4 })
+  Object.assign(myMenu.element(1), { name: "soup du jour", price: 2.5 })
+  Object.assign(myMenu.element(2), { name: "fries", price: 2.25 })
+
+  const bytesCopy = Uint8Array.from(bytes)
+  const menuCopy = new Menu(bytesCopy)
+  assertEquals(menuCopy.length, 3)
+  assertEquals(menuCopy.element(0).name, "garden salad")
+  assertEquals(menuCopy.element(0).price, 4)
+  assertEquals(menuCopy.element(1).name, "soup du jour")
+  assertEquals(menuCopy.element(1).price, 2.5)
+  assertEquals(menuCopy.element(2).name, "fries")
+  assertEquals(menuCopy.element(2).price, 2.25)
+})

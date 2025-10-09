@@ -14,7 +14,7 @@ data in a typesafe, object-oriented way.
 # example
 
 ```ts
-import { defineStruct, string, substruct, u8 } from "@rotu/structview"
+import { defineStruct, f32, string, substruct, u8 } from "@rotu/structview"
 
 // Structs can be inherited from like other classes
 class Version extends defineStruct({
@@ -50,4 +50,25 @@ console.log(
 
 console.log(`${info.product} v${info.version}`)
 console.log({ ...info })
+
+// You can compose structs into arrays
+const Dish = defineStruct({
+  price: f32(0),
+  name: string(4, 12),
+})
+const Menu = defineArray({
+  struct: Dish,
+  byteStride: 16,
+  length: 3,
+})
+
+const myMenu = new Menu(new Uint8Array(48))
+Object.assign(myMenu.element(0), { name: "garden salad", price: 4 })
+Object.assign(myMenu.element(1), { name: "soup du jour", price: 2.5 })
+Object.assign(myMenu.element(2), { name: "fries", price: 2.25 })
+
+// and arrays are iterable
+for (const dish of myMenu) {
+  console.log(`${dish.name} costs \$${dish.price}`)
+}
 ```
