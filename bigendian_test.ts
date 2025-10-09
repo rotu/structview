@@ -8,7 +8,7 @@ import {
   u16be,
   u32be,
   u64be,
-} from "@rotu/structview/bigendian"
+} from "./bigendian.ts"
 import { defineStruct, i16, i32, i64, u16, u32, u64 } from "./mod.ts"
 
 import { assertEquals } from "@std/assert"
