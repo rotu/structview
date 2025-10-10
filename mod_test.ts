@@ -1,4 +1,5 @@
 import {
+  bool,
   defineArray,
   defineStruct,
   f16,
@@ -140,6 +141,23 @@ Deno.test("string", () => {
   assertEquals(c.hello, "world!")
   c.hello = "abc\0def"
   assertEquals(c.hello, "abc\0def")
+})
+
+Deno.test("bool", () => {
+  const bytes = new Uint8Array([0, -1])
+  const Cls = defineStruct({
+    a: bool(0),
+    b: bool(1),
+  })
+  const c = new Cls(bytes)
+  assertEquals(c.a, false)
+  assertEquals(c.b, true)
+  c.a = true
+  assertEquals(c.a, true)
+  assertEquals(bytes[0], 1)
+  c.a = false
+  assertEquals(c.a, false)
+  assertEquals(bytes[0], 0)
 })
 
 Deno.test("substruct", () => {

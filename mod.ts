@@ -277,6 +277,22 @@ export function string(
   }
 }
 
+/**
+ * Field for a boolean stored in a byte (0 = false, nonzero = true)
+ * True will be stored as 1
+ */
+export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
+  return {
+    enumerable: true,
+    get() {
+      return Boolean(structDataView(this).getUint8(fieldOffset))
+    },
+    set(value) {
+      structDataView(this).setUint8(fieldOffset, value ? 1 : 0)
+    },
+  }
+}
+
 type StructConstructor<T extends object> = {
   new (arg: {
     buffer: ArrayBufferLike
