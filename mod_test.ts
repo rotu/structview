@@ -10,6 +10,7 @@ import {
   i8,
   string,
   Struct,
+  structDataView,
   substruct,
   u16,
   u32,
@@ -21,6 +22,7 @@ import {
   assert,
   assertEquals,
   assertInstanceOf,
+  assertStrictEquals,
   assertThrows,
   fail,
 } from "@std/assert"
@@ -51,6 +53,35 @@ Deno.test("struct", () => {
   const s = new Struct({ buffer: new ArrayBuffer(10) })
   assertInstanceOf(s, Struct)
   assertEquals(String(s), "[object Struct]")
+})
+
+Deno.test("constructor", () => {
+  const buf = new ArrayBuffer(10)
+  const s = new Struct({ buffer: buf })
+  assertStrictEquals(structDataView(s).buffer, buf)
+  const s2 = new Struct({ byteLength: 13 })
+  assertEquals(structDataView(s2).byteLength, 13)
+  const s3 = new Struct({ byteLength: 5, byteOffset: 2 })
+  assertEquals(structDataView(s3).byteLength, 5)
+  assertEquals(structDataView(s3).byteOffset, 2)
+  assertInstanceOf(structDataView(s3).buffer, ArrayBuffer)
+
+  assertThrows(() => {
+    // @ts-expect-error invalid arg
+    new Struct()
+  })
+  assertThrows(() => {
+    // @ts-expect-error invalid arg
+    new Struct(null)
+  })
+  assertThrows(() => {
+    // @ts-expect-error invalid arg
+    new Struct({})
+  })
+  assertThrows(() => {
+    // @ts-expect-error invalid arg
+    new Struct({ byteOffset: 1 })
+  })
 })
 
 Deno.test("vec3", () => {

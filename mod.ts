@@ -324,17 +324,48 @@ export class Struct {
   static toDataView(o: Struct): DataView {
     return o[dataViewSymbol]
   }
-  constructor(arg: {
-    buffer: ArrayBufferLike
-    byteOffset?: number
-    byteLength?: number
-  }) {
+
+  /**
+   * Create a new Struct
+   * @param arg options for creating the struct.
+   *  If options has a `.buffer` property, we will use that as the backing memory (e.g. any TypedArray or DataView).
+   *  If options has no `.buffer` property but has a `.byteLength`, we will allocate a new buffer for the object.
+   */
+  constructor(
+    arg:
+      | {
+        buffer: ArrayBufferLike
+        byteOffset?: number
+        byteLength?: number
+      }
+      | {
+        buffer?: undefined
+        byteOffset?: number
+        byteLength: number
+      },
+  ) {
+    if (typeof arg !== "object" || arg === null) {
+      throw new TypeError("Expected argument to be an object")
+    }
+
     Object.preventExtensions(this)
-    this[dataViewSymbol] = new DataView(
-      arg.buffer,
-      arg.byteOffset,
-      arg.byteLength,
-    )
+    if (arg.buffer) {
+      this[dataViewSymbol] = new DataView(
+        arg.buffer,
+        arg.byteOffset,
+        arg.byteLength,
+      )
+    } else if (typeof arg.byteLength === "number") {
+      this[dataViewSymbol] = new DataView(
+        new ArrayBuffer(arg.byteLength + (arg.byteOffset ?? 0)),
+        arg.byteOffset,
+        arg.byteLength,
+      )
+    } else {
+      throw new TypeError(
+        "Must provide either {buffer} or {byteLength}",
+      )
+    }
   }
 }
 
