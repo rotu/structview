@@ -5,7 +5,7 @@
 
 const dataViewSymbol = Symbol.for("Struct.dataview")
 type AnyStruct = {
-  get [dataViewSymbol](): DataView
+  readonly [dataViewSymbol]: DataView
 }
 // deno-lint-ignore no-explicit-any
 type Constructor<T> = { new (...args: any[]): T }
@@ -432,7 +432,7 @@ export function defineArray<Ctor extends StructConstructor<object>>(
   },
 ): StructConstructor<
   {
-    get length(): number
+    readonly length: number
     element(i: number): InstanceType<Ctor>
     [i: number]: InstanceType<Ctor>
   } & Iterable<InstanceType<Ctor>>
