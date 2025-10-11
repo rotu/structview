@@ -9,8 +9,6 @@ type AnyStruct = {
 }
 // deno-lint-ignore no-explicit-any
 type Constructor<T> = { new (...args: any[]): T }
-// deno-lint-ignore no-explicit-any
-type AnyConstructor = Constructor<any>
 
 type SubclassWithProperties<
   Ctor extends Constructor<object>,
@@ -20,7 +18,7 @@ type SubclassWithProperties<
   & {
     new (
       ...args: ConstructorParameters<Ctor>
-    ): InstanceType<Ctor> & { -readonly [K in keyof Mixin]: Mixin[K] }
+    ): InstanceType<Ctor> & { [K in keyof Mixin]: Mixin[K] }
   }
 
 type TPropertyDescriptor<T> = {
@@ -33,7 +31,8 @@ type TPropertyDescriptor<T> = {
 }
 
 type MixinFromProps<Props extends object> = {
-  [K in keyof Props]: Props[K] extends TPropertyDescriptor<infer V> ? V
+  -readonly [K in keyof Props]: Props[K] extends TPropertyDescriptor<infer V>
+    ? V
     : unknown
 }
 
@@ -301,9 +300,9 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
 
 type StructConstructor<T extends object> = {
   new (arg: {
-    buffer: ArrayBufferLike
-    byteOffset?: number
-    byteLength?: number
+    readonly buffer: ArrayBufferLike
+    readonly byteOffset: number
+    readonly byteLength: number
   }): T
 }
 
@@ -356,14 +355,14 @@ export class Struct {
   constructor(
     arg:
       | {
-        buffer: ArrayBufferLike
-        byteOffset?: number
-        byteLength?: number
+        readonly buffer: ArrayBufferLike
+        readonly byteOffset?: number
+        readonly byteLength?: number
       }
       | {
-        buffer?: undefined
-        byteOffset?: number
-        byteLength: number
+        readonly buffer?: undefined
+        readonly byteOffset?: number
+        readonly byteLength: number
       },
   ) {
     if (typeof arg !== "object" || arg === null) {
@@ -398,7 +397,7 @@ export class Struct {
  * @returns A new class, inheriting from the base class, with the new property descriptors added
  */
 function subclassWithProperties<
-  const Ctor extends AnyConstructor,
+  const Ctor extends Constructor<object>,
   const Props extends PropertyDescriptorMap,
 >(
   ctor: Ctor,
@@ -408,7 +407,7 @@ function subclassWithProperties<
     static {
       Object.defineProperties(this.prototype, propertyDescriptors)
     }
-  })
+  }) as SubclassWithProperties<Ctor, MixinFromProps<Props>>
 }
 
 /**
@@ -430,11 +429,11 @@ export function defineStruct<const Props extends PropertyDescriptorMap>(
 export function defineArray<Item extends object>(
   arrayOptions: {
     /** Constructor for an object view of each item */
-    struct: StructConstructor<Item>
+    readonly struct: StructConstructor<Item>
     /** Number of bytes between the start of consecutive items */
-    byteStride: number
+    readonly byteStride: number
     /** Total number of items in the array (not bytes). If omitted, the array length will depend on the size of its underlying buffer */
-    length?: number
+    readonly length?: number
   },
 ): StructConstructor<
   {
