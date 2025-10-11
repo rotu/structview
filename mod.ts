@@ -398,12 +398,11 @@ function subclassWithProperties<
   ctor: Ctor,
   propertyDescriptors: Props,
 ): SubclassWithProperties<Ctor, MixinFromProps<Props>> {
-  const Subclass = class extends ctor {
+  return (class extends ctor {
     static {
       Object.defineProperties(this.prototype, propertyDescriptors)
     }
-  }
-  return Subclass
+  })
 }
 
 /**
