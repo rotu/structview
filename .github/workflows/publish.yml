@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  publish:
+  jsr:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,3 +18,26 @@ jobs:
           deno-version: vx.x.x
       - name: Publish package
         run: deno publish
+  npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: vx.x.x
+      - name: setup Node
+        uses: actions/setup-node@v4
+        with:
+          registry-url: "https://registry.npmjs.org"
+      - name: Build npm package
+        run: deno run -A scripts/build_npm.ts
+      
+      - name: Publish package
+        run: npm publish --provenance --access public
+        working-directory: ./npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
