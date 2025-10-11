@@ -19,7 +19,7 @@ jobs:
       - name: Publish package
         run: deno publish
   npm:
-    needs: 
+    needs:
       - jsr
     runs-on: ubuntu-latest
     # if you need publish with provenance, you should set permissions
@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          registry-url: 'https://registry.npmjs.org' # needed for npm publish
+          registry-url: "https://registry.npmjs.org" # needed for npm publish
       - uses: denoland/setup-deno@v2
       - name: Publish to npm
         run: deno run -A jsr:@ryoppippi/mirror-jsr-to-npm
@@ -40,4 +40,3 @@ jobs:
           PACKAGE_DESCRIPTION: "Elegant, no-nonsense, typesafe binary data reading and writing."
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # Set your npm token as a GitHub secret
           NPM_CONFIG_PROVENANCE: true # If you publish with provenance
-
