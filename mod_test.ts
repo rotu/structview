@@ -265,10 +265,10 @@ Deno.test("structArray", () => {
   }
   const ar = new ElArray(buf)
   assertEquals(ar.length, 2)
-  assertEquals(ar[0].x, 0x00)
-  assertEquals(ar[0].y, 0x02)
-  assertEquals(ar[1].x, 0x03)
-  assertEquals(ar[1].y, 0x05)
+  assertEquals(ar.element(0).x, 0x00)
+  assertEquals(ar.element(0).y, 0x02)
+  assertEquals(ar.element(1).x, 0x03)
+  assertEquals(ar.element(1).y, 0x05)
 
   // and that iteration/unpacking works
   const [el0, el1, el2] = ar
@@ -293,10 +293,10 @@ Deno.test("dynamicLength", () => {
   assertEquals(ar1.length, 3)
   assertEquals(ar2.length, 7)
 
-  ar1[2].x = -21
+  ar1.element(2).x = -21
   assertEquals(buf1[6], 235)
 
-  ar2[6].y = -67
+  ar2.element(6).y = -67
   assertEquals(buf2[20], 189)
 })
 

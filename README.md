@@ -75,9 +75,9 @@ class Menu extends defineArray({
 }) {}
 
 const myMenu = new Menu({ byteLength: 48 })
-Object.assign(myMenu.element(0), { name: "garden salad", price: 4 })
-Object.assign(myMenu.element(1), { name: "soup du jour", price: 2.5 })
-Object.assign(myMenu.element(2), { name: "fries", price: 2.25 })
+Object.assign(myMenu.item(0), { name: "garden salad", price: 4 })
+Object.assign(myMenu.item(1), { name: "soup du jour", price: 2.5 })
+Object.assign(myMenu.item(2), { name: "fries", price: 2.25 })
 
 // and arrays are iterable
 for (const dish of myMenu) {

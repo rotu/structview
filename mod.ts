@@ -429,62 +429,61 @@ export function defineStruct<const Props extends PropertyDescriptorMap>(
  */
 export function defineArray<Ctor extends StructConstructor<object>>(
   arrayOptions: {
-    /** Constructor for an object view of each element*/
+    /** Constructor for an object view of each item */
     struct: Ctor
-    /** Number of bytes between the start of consecutive elements */
+    /** Number of bytes between the start of consecutive items */
     byteStride: number
-    /** Total number of elements in the array (not bytes). If omitted, the array length will depend on the size of its underlying buffer */
+    /** Total number of items in the array (not bytes). If omitted, the array length will depend on the size of its underlying buffer */
     length?: number
   },
 ): StructConstructor<
   {
     readonly length: number
     element(i: number): InstanceType<Ctor>
-    [i: number]: InstanceType<Ctor>
   } & Iterable<InstanceType<Ctor>>
 > {
   const { struct, byteStride, length } = arrayOptions
 
-  // Define a subclass of Struct which translates array-like index access into element access
-  // x[2] -> x.element(2)
-  const ProxiedStruct = function (
-    ...args: ConstructorParameters<typeof Struct>
-  ) {
-    return Reflect.construct(Struct, args, new.target)
-  } as unknown as StructConstructor<Struct & { [i: number]: Ctor }>
-
-  ProxiedStruct.prototype = new Proxy(Struct.prototype, {
-    get(target, p, receiver) {
-      if (typeof p === "string") {
-        const i = parseInt(p)
-        if (p === String(i)) {
-          return receiver.element(i)
-        }
-      }
-      return Reflect.get(target, p, receiver)
-    },
-  })
-
-  class StructArray extends ProxiedStruct {
+  class StructArray extends Struct {
     #struct = struct
     #length = length
     #byteStride = byteStride
 
+    /**
+     * Number of items in the array
+     */
     get length() {
       if (typeof this.#length === "number") {
         return this.#length
       }
       return structDataView(this).byteLength / this.#byteStride
     }
-    element(i: number) {
+
+    /**
+     * A view of the item at the given index
+     * @param index
+     * @returns a new struct instance viewing the item at the given index
+     */
+    item(index: number) {
       const ctor = this.#struct
       return new ctor(
-        structBytes(this, this.#byteStride * i, this.#byteStride * (i + 1)),
+        structBytes(
+          this,
+          this.#byteStride * index,
+          this.#byteStride * (index + 1),
+        ),
       )
     }
+    /** @deprecated use item() instead */
+    element(index: number) {
+      return this.item(index)
+    }
+    /**
+     * Iterate over the items in the array
+     */
     *[Symbol.iterator]() {
       for (let i = 0; i < this.length; ++i) {
-        yield this.element(i)
+        yield this.item(i)
       }
     }
   }
