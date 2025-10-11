@@ -427,10 +427,10 @@ export function defineStruct<const Props extends PropertyDescriptorMap>(
  * @param arrayOptions
  * @returns A new class, inheriting from `Struct` whose elements are statically typed structs
  */
-export function defineArray<Ctor extends StructConstructor<object>>(
+export function defineArray<Item extends object>(
   arrayOptions: {
     /** Constructor for an object view of each item */
-    struct: Ctor
+    struct: StructConstructor<Item>
     /** Number of bytes between the start of consecutive items */
     byteStride: number
     /** Total number of items in the array (not bytes). If omitted, the array length will depend on the size of its underlying buffer */
@@ -439,8 +439,8 @@ export function defineArray<Ctor extends StructConstructor<object>>(
 ): StructConstructor<
   {
     readonly length: number
-    element(i: number): InstanceType<Ctor>
-  } & Iterable<InstanceType<Ctor>>
+    element(i: number): Item
+  } & Iterable<Item>
 > {
   const { struct, byteStride, length } = arrayOptions
 
@@ -464,7 +464,7 @@ export function defineArray<Ctor extends StructConstructor<object>>(
      * @param index
      * @returns a new struct instance viewing the item at the given index
      */
-    item(index: number) {
+    item(index: number): Item {
       const ctor = this.#struct
       return new ctor(
         structBytes(
@@ -487,6 +487,5 @@ export function defineArray<Ctor extends StructConstructor<object>>(
       }
     }
   }
-  // deno-lint-ignore no-explicit-any
-  return StructArray as any
+  return StructArray
 }
