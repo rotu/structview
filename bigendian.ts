@@ -94,6 +94,12 @@ export function i64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
  * Field for a big-endian 16-bit binary float (float16_t)
  */
 export function f16be(fieldOffset: number): StructPropertyDescriptor<number> {
+  if (
+    typeof DataView.prototype.getFloat16 !== "function" ||
+    typeof DataView.prototype.setFloat16 !== "function"
+  ) {
+    throw new TypeError("float16 is not supported in this environment")
+  }
   return {
     enumerable: true,
     get() {

@@ -44,7 +44,7 @@ class vec3_t extends defineStruct({
 }
 
 Deno.test("struct has no enumerable properties", () => {
-  const s = new Struct({ buffer: new ArrayBuffer() })
+  const s = new Struct({ buffer: new ArrayBuffer(0) })
   for (const x in s) {
     fail(`unexpected key '${x}'`)
   }
@@ -203,21 +203,31 @@ Deno.test("integers", () => {
 
 Deno.test("floats", () => {
   const Floats = defineStruct({
-    f16: f16(0),
     f32: f32(4),
     f64: f64(8),
   })
   const bytes = new Uint8Array(16)
   const v = new Floats(bytes)
-  assertEquals(v.f16, 0)
   assertEquals(v.f32, 0)
   assertEquals(v.f64, 0)
-  v.f16 = 1 / 3
   v.f32 = 1 / 3
   v.f64 = 1 / 3
-  assertEquals(v.f16, Math.f16round(1 / 3))
   assertEquals(v.f32, Math.fround(1 / 3))
   assertEquals(v.f64, 1 / 3)
+})
+
+Deno.test({
+  name: "float16",
+  ignore: typeof DataView.prototype.getFloat16 !== "function",
+  fn: () => {
+    class S extends defineStruct({ f16: f16(0) }) {}
+    const v = new S(new Uint8Array(2))
+    assertEquals(v.f16, 0)
+    v.f16 = 1.5
+    assertEquals(v.f16, 1.5)
+    v.f16 = 1 / 3
+    assertEquals(v.f16, 0.333251953125)
+  },
 })
 
 Deno.test("bad property descriptor", () => {

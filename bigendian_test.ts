@@ -9,7 +9,7 @@ import {
   u32be,
   u64be,
 } from "./bigendian.ts"
-import { defineStruct, i16, i32, i64, u16, u32, u64 } from "./mod.ts"
+import { defineStruct, f16, i16, i32, i64, u16, u32, u64 } from "./mod.ts"
 
 import { assertEquals } from "@std/assert"
 
@@ -52,19 +52,38 @@ Deno.test("integers", () => {
 
 Deno.test("floats", () => {
   const Floats = defineStruct({
-    f16: f16be(0),
     f32: f32be(4),
     f64: f64be(8),
   })
   const bytes = new Uint8Array(16)
   const v = new Floats(bytes)
-  assertEquals(v.f16, 0)
   assertEquals(v.f32, 0)
   assertEquals(v.f64, 0)
-  v.f16 = 1 / 3
   v.f32 = 1 / 3
   v.f64 = 1 / 3
-  assertEquals(v.f16, Math.f16round(1 / 3))
   assertEquals(v.f32, Math.fround(1 / 3))
   assertEquals(v.f64, 1 / 3)
+})
+
+Deno.test({
+  name: "float16",
+  ignore: typeof DataView.prototype.getFloat16 !== "function",
+  fn: () => {
+    const bytes = new Uint8Array(2)
+    class F16BE extends defineStruct({ value: f16be(0) }) {}
+    class F16LE extends defineStruct({ value: f16(0) }) {}
+    const vbe = new F16BE(bytes)
+    const vle = new F16LE(bytes)
+
+    assertEquals(vbe.value, 0)
+    assertEquals(vle.value, 0)
+
+    vbe.value = 1.5e3
+    assertEquals(vbe.value, 1.5e3)
+    assertEquals(vle.value, -281.25)
+
+    bytes.reverse()
+    assertEquals(vbe.value, -281.25)
+    assertEquals(vle.value, 1.5e3)
+  },
 })
