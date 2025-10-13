@@ -1,3 +1,4 @@
+import { bigintle, biguintle } from "./bigints.ts"
 import {
   bool,
   defineArray,
@@ -326,4 +327,21 @@ Deno.test("can copy", () => {
   assertEquals(menuCopy.element(1).price, 2.5)
   assertEquals(menuCopy.element(2).name, "fries")
   assertEquals(menuCopy.element(2).price, 2.25)
+})
+
+Deno.test("bigints", () => {
+  const buf = Uint8Array.fromHex("d6ffffffffffffffffffffff0c0d0e0f10111213")
+  class S extends defineStruct({
+    unsigned: biguintle(2, { byteLength: 12 }),
+    signed: bigintle(2, { byteLength: 12 }),
+  }) {}
+
+  const s = new S(buf)
+  assertEquals(s.unsigned, 0xd0cffffffffffffffffffffn)
+  assertEquals(s.signed, 0xd0cffffffffffffffffffffn)
+
+  s.signed = -0x42n
+  assertEquals(s.unsigned, 0xffffffffffffffffffffffben)
+  assertEquals(s.signed, -0x42n)
+  assertEquals(buf.toHex(), "d6ffbeffffffffffffffffffffff0e0f10111213")
 })
