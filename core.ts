@@ -33,7 +33,11 @@ export function structDataView(struct: AnyStruct): DataView {
  * @param end byte offset of the end of the subrange
  * @returns region of the given struct.
  */
-export function structBytes(struct: AnyStruct, start?: number, end?: number): Uint8Array {
+export function structBytes(
+  struct: AnyStruct,
+  start?: number,
+  end?: number,
+): Uint8Array {
   const dv = structDataView(struct)
   start ??= 0
   end ??= dv.byteLength
