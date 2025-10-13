@@ -1,8 +1,7 @@
-import { bigintle, biguintle } from "./bigints.ts"
 import {
+  bigintle,
+  biguintle,
   bool,
-  defineArray,
-  defineStruct,
   f16,
   f32,
   f64,
@@ -11,14 +10,13 @@ import {
   i64,
   i8,
   string,
-  Struct,
-  structDataView,
   substruct,
   u16,
   u32,
   u64,
   u8,
-} from "./mod.ts"
+} from "./fields.ts"
+import { defineArray, defineStruct, Struct, structDataView } from "./core.ts"
 
 import {
   assert,

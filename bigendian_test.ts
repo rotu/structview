@@ -1,15 +1,22 @@
+import { defineStruct } from "./core.ts"
 import {
+  f16,
   f16be,
   f32be,
   f64be,
+  i16,
   i16be,
+  i32,
   i32be,
+  i64,
   i64be,
+  u16,
   u16be,
+  u32,
   u32be,
+  u64,
   u64be,
-} from "./bigendian.ts"
-import { defineStruct, f16, i16, i32, i64, u16, u32, u64 } from "./mod.ts"
+} from "./fields.ts"
 
 import { assertEquals } from "@std/assert"
 
