@@ -12,7 +12,8 @@
     "jsr:@std/path@1": "1.1.2",
     "jsr:@std/path@^1.1.1": "1.1.2",
     "jsr:@ts-morph/bootstrap@0.27": "0.27.0",
-    "jsr:@ts-morph/common@0.27": "0.27.0"
+    "jsr:@ts-morph/common@0.27": "0.27.0",
+    "npm:uint8array-extras@^1.5.0": "1.5.0"
   },
   "jsr": {
     "@david/code-block-writer@13.0.3": {
@@ -67,10 +68,16 @@
       ]
     }
   },
+  "npm": {
+    "uint8array-extras@1.5.0": {
+      "integrity": "sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A=="
+    }
+  },
   "workspace": {
     "dependencies": [
       "jsr:@deno/dnt@~0.42.3",
-      "jsr:@std/assert@1"
+      "jsr:@std/assert@1",
+      "npm:uint8array-extras@^1.5.0"
     ]
   }
 }

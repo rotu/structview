@@ -29,6 +29,10 @@ import {
   fail,
 } from "@std/assert"
 
+// Deno supports this but Node doesn't yet.
+// This is so the dnt output can run in Node
+import { hexToUint8Array } from "uint8array-extras"
+
 class vec3_t extends defineStruct({
   0: f32(0),
   1: f32(4),
@@ -330,7 +334,7 @@ Deno.test("can copy", () => {
 })
 
 Deno.test("bigints", () => {
-  const buf = Uint8Array.fromHex("d6ffffffffffffffffffffff0c0d0e0f10111213")
+  const buf = hexToUint8Array("d6ffffffffffffffffffffff0c0d0e0f10111213")
   class S extends defineStruct({
     unsigned: biguintle(2, { byteLength: 12 }),
     signed: bigintle(2, { byteLength: 12 }),
