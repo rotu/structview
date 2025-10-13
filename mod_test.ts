@@ -31,7 +31,7 @@ import {
 
 // Deno supports this but Node doesn't yet.
 // This is so the dnt output can run in Node
-import { hexToUint8Array } from "uint8array-extras"
+import { hexToUint8Array, uint8ArrayToHex } from "uint8array-extras"
 
 class vec3_t extends defineStruct({
   0: f32(0),
@@ -347,5 +347,5 @@ Deno.test("bigints", () => {
   s.signed = -0x42n
   assertEquals(s.unsigned, 0xffffffffffffffffffffffben)
   assertEquals(s.signed, -0x42n)
-  assertEquals(buf.toHex(), "d6ffbeffffffffffffffffffffff0e0f10111213")
+  assertEquals(uint8ArrayToHex(buf), "d6ffbeffffffffffffffffffffff0e0f10111213")
 })
