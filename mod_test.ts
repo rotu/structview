@@ -11,6 +11,7 @@ import {
   i8,
   string,
   substruct,
+  typedArray,
   u16,
   u32,
   u64,
@@ -346,4 +347,42 @@ Deno.test("bigints", () => {
   assertEquals(s.unsigned, 0xffffffffffffffffffffffben)
   assertEquals(s.signed, -0x42n)
   assertEquals(uint8ArrayToHex(buf), "d6ffbeffffffffffffffffffffff0e0f10111213")
+})
+
+Deno.test("typedArrayFix", () => {
+  const buf = new Uint8Array(40)
+  class S extends defineStruct({
+    f32s: typedArray(4, { species: Float32Array, length: 2 }),
+  }) {}
+  const instance = new S(buf)
+  assertInstanceOf(instance.f32s, Float32Array)
+  assertEquals(instance.f32s.length, 2)
+
+  assertStrictEquals(instance.f32s.buffer, buf.buffer)
+  assertEquals(instance.f32s.byteOffset, 4)
+  assertEquals(instance.f32s.length, 2)
+})
+
+Deno.test("typedArray", () => {
+  const buf = new Uint8Array(40)
+  class S extends defineStruct({
+    data_length: u8(0),
+    f32s: typedArray(4, { species: Float32Array, length: "data_length" }),
+  }) {}
+  const instance = new S(buf)
+  assertEquals(instance.data_length, 0)
+  assertInstanceOf(instance.f32s, Float32Array)
+  assertEquals(instance.f32s.length, 0)
+  assertStrictEquals(instance.f32s.buffer, buf.buffer)
+  instance.data_length = 3
+  assertEquals(instance.data_length, 3)
+  assertInstanceOf(instance.f32s, Float32Array)
+  assertEquals(instance.f32s.length, 3)
+  assertStrictEquals(instance.f32s.buffer, buf.buffer)
+
+  instance.f32s[0] = 1 / 3
+  instance.f32s[1] = 1 / 6
+  instance.f32s[2] = 1 / 9
+  const f32s2 = new Float32Array([1 / 3, 1 / 6, 1 / 9])
+  assertEquals(new Float32Array(buf.buffer.slice(4, 16)), f32s2)
 })

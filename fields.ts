@@ -4,7 +4,11 @@
  */
 
 import { fromDataView, structBytes, structDataView } from "./core.ts"
-import type { StructConstructor, StructPropertyDescriptor } from "./types.ts"
+import type {
+  StructConstructor,
+  StructPropertyDescriptor,
+  TypedArraySpecies,
+} from "./types.ts"
 
 /**
  * Field for a 8-bit unsigned integer
@@ -304,6 +308,50 @@ export function substruct<
       }])
     },
   )
+}
+
+/**
+ * Field for a typed array
+ *
+ * @remarks
+ *
+ * I'm not totally happy with this.
+ * - TypedArray does not support endianness.
+ * - Changing the length property of the parent struct will not change the length of the returned value. `a=x.ar; x.arlength=2;` will not change a's length (though a will still be a live view of the underlying buffer).
+ *
+ * @param fieldOffset  where the array starts relative to the parent struct
+ */
+export function typedArray<T>(
+  fieldOffset: number,
+  kwargs: {
+    /** length or property name for the length of the array */
+    readonly length: number | string | undefined
+    /** TypedArray constructor */
+    readonly species: TypedArraySpecies<T>
+  },
+): StructPropertyDescriptor<T> {
+  const { length, species } = kwargs
+  return {
+    enumerable: true,
+    get() {
+      const dv = structDataView(this)
+      let lengthValue
+      if (typeof length === "undefined") {
+        lengthValue = Math.floor(
+          (dv.byteLength - fieldOffset) / species.BYTES_PER_ELEMENT,
+        )
+      } else if (typeof length === "number") {
+        lengthValue = length
+      } else if (typeof length === "string") {
+        lengthValue = Reflect.get(this, length)
+      }
+      return new species(
+        dv.buffer,
+        dv.byteOffset + fieldOffset,
+        lengthValue,
+      )
+    },
+  }
 }
 
 /**

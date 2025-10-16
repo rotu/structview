@@ -51,3 +51,12 @@ export type StructConstructor<T extends object> = {
     readonly byteLength: number
   }): T
 }
+
+export type TypedArraySpecies<T> = {
+  new (
+    buffer: ArrayBufferLike,
+    byteOffset?: number,
+    length?: number,
+  ): T
+  readonly BYTES_PER_ELEMENT: number
+}
