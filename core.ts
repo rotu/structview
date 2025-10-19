@@ -63,6 +63,9 @@ export class Struct {
    * @param arg options for creating the struct.
    *  If options has a `.buffer` property, we will use that as the backing memory (e.g. any TypedArray or DataView).
    *  If options has no `.buffer` property but has a `.byteLength`, we will allocate a new buffer for the object.
+   * @remarks
+   * The reason we don't use a positional argument for `byteLength` is because it's confusing - TypedArray constructors take a `length` argument that is in elements, not bytes.
+   * Another reason is because this allows you to pass in a `DataView` or a `TypedArray` directly to reinterpret its memory as a struct.
    */
   constructor(
     arg:
@@ -155,6 +158,9 @@ export function defineArray<Item extends object>(
 > {
   const { struct, byteStride, length } = arrayOptions
 
+  /**
+   * Class representing an array of structs.
+   */
   class StructArray extends Struct {
     #struct = struct
     #length = length
@@ -174,6 +180,8 @@ export function defineArray<Item extends object>(
      * A view of the item at the given index
      * @param index
      * @returns a new struct instance viewing the item at the given index
+     * @remarks
+     * Items are gettable but not settable. It is assumed that you will mutate the struct in place.
      */
     item(index: number): Item {
       const ctor = this.#struct
@@ -185,6 +193,7 @@ export function defineArray<Item extends object>(
         ),
       )
     }
+
     /** @deprecated use item() instead */
     element(index: number) {
       return this.item(index)

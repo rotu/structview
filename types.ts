@@ -31,6 +31,9 @@ export type TPropertyDescriptor<T> = {
   writable?: boolean
 }
 
+/**
+ * Object type that would result from Object.defineProperties(p:Props)
+ */
 export type MixinFromProps<Props extends object> = {
   -readonly [K in keyof Props]: Props[K] extends TPropertyDescriptor<infer V>
     ? V
@@ -43,7 +46,6 @@ export type MixinFromProps<Props extends object> = {
 export type StructPropertyDescriptor<T> =
   & ThisType<AnyStruct>
   & TPropertyDescriptor<T>
-
 export type StructConstructor<T extends object> = {
   new (arg: {
     readonly buffer: ArrayBufferLike
@@ -52,6 +54,9 @@ export type StructConstructor<T extends object> = {
   }): T
 }
 
+/**
+ * Type of a TypedArray subclass constructor
+ */
 export type TypedArraySpecies<T> = {
   new (
     buffer: ArrayBufferLike,

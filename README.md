@@ -85,3 +85,18 @@ for (const dish of myMenu) {
   console.log(`${dish.name} costs \$${dish.price}`)
 }
 ```
+
+# Gotchas and rough edges
+
+1. Resizable structs are not yet implemented. Resizable `Arraybuffer`s only
+   allow you to add or remove bytes at the end which is not the best experience.
+   You can still create a `Struct` on top of a resizable `ArrayBuffer` at your
+   own risk.
+2. Struct fields have a byte offset specified in bytes from the beginning of the
+   declaring struct. This is a bit verbose but is a deliberate choice.
+   - It prevents changes to the struct from accidentally changing other fields
+   - It implicitly allows C-style `union`s for free.
+   - Different languages and compilers have different expectations for alignment
+     and spacing of fields.
+3. Be careful using `TypedArray`s. They have an alignment requirement relative
+   to their underlying `ArrayBuffer`.
