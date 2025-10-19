@@ -3,7 +3,7 @@
  * @module
  */
 
-import { fromDataView, structBytes, structDataView } from "./core.ts"
+import { structBytes, structDataView } from "./core.ts"
 import type {
   StructConstructor,
   StructPropertyDescriptor,
@@ -279,6 +279,23 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
     },
     set(value) {
       structDataView(this).setUint8(fieldOffset, value ? 1 : 0)
+    },
+  }
+}
+
+/**
+ * Define a descriptor based on a dataview of the struct
+ * @param fieldGetter function which, given a dataview, returns
+ * @returns
+ */
+export function fromDataView<T>(
+  fieldGetter: (dv: DataView) => T,
+): StructPropertyDescriptor<T> {
+  return {
+    enumerable: true,
+    get() {
+      const dv = structDataView(this)
+      return fieldGetter(dv)
     },
   }
 }

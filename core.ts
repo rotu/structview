@@ -8,7 +8,6 @@ import type {
   Constructor,
   MixinFromProps,
   StructConstructor,
-  StructPropertyDescriptor,
   SubclassWithProperties,
 } from "./types.ts"
 
@@ -44,23 +43,6 @@ export function structBytes(
   console.assert(start <= end)
   console.assert(end <= dv.byteLength)
   return new Uint8Array(dv.buffer, dv.byteOffset + start, end - start)
-}
-
-/**
- * Define a descriptor based on a dataview of the struct
- * @param fieldGetter function which, given a dataview, returns
- * @returns
- */
-export function fromDataView<Fn extends (dv: DataView) => unknown>(
-  fieldGetter: Fn,
-): StructPropertyDescriptor<ReturnType<Fn>> {
-  return {
-    enumerable: true,
-    get() {
-      const dv = this[dataViewSymbol]
-      return fieldGetter(dv)
-    },
-  } as ThisType<Struct>
 }
 
 /**
