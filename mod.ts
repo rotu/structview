@@ -6,3 +6,5 @@
 export type * from "./types.ts"
 export * from "./core.ts"
 export * from "./fields.ts"
+
+export * as bigendian from "./bigendian.ts"
