@@ -1,9 +1,10 @@
 {
   "name": "@rotu/structview",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "license": "MIT",
   "tasks": {
-    "dev": "deno test --watch"
+    "dev": "deno test --watch",
+    "npm": "deno run -A scripts/build_npm.ts"
   },
   "fmt": {
     "semiColons": false

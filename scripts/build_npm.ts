@@ -7,7 +7,8 @@ await emptyDir("./npm")
 await build({
   typeCheck: false,
   scriptModule: false,
-  entryPoints: ["./mod.ts"],
+  entryPoints: Object.entries(denojson.exports)
+    .map(([name, path]) => ({ name, path })),
   outDir: "./npm",
   shims: {
     deno: "dev",
