@@ -100,6 +100,6 @@ for (const dish of myMenu) {
      and spacing of fields.
 3. Be careful using `TypedArray`s. They have an alignment requirement relative
    to their underlying `ArrayBuffer`.
-4. `Struct` classes define properties on the prototype, *not* on the instance.
-   That means spread syntax (`x = {...s}`) and `JSON.stringify(s)` will *not*
+4. `Struct` classes define properties on the prototype, _not_ on the instance.
+   That means spread syntax (`x = {...s}`) and `JSON.stringify(s)` will _not_
    reflect inherited fields.
