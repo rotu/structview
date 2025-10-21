@@ -15,7 +15,6 @@ import type {
  */
 export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getUint8(fieldOffset)
     },
@@ -29,7 +28,6 @@ export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getUint16(fieldOffset, true)
     },
@@ -43,7 +41,6 @@ export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getUint32(fieldOffset, true)
     },
@@ -57,7 +54,6 @@ export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getBigUint64(fieldOffset, true)
     },
@@ -71,7 +67,6 @@ export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
  */
 export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getInt8(fieldOffset)
     },
@@ -85,7 +80,6 @@ export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getInt16(fieldOffset, true)
     },
@@ -99,7 +93,6 @@ export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getInt32(fieldOffset, true)
     },
@@ -113,7 +106,6 @@ export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getBigInt64(fieldOffset, true)
     },
@@ -197,7 +189,6 @@ export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
     throw new TypeError("float16 is not supported in this environment")
   }
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getFloat16(fieldOffset, true)
     },
@@ -212,7 +203,6 @@ export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getFloat32(fieldOffset, true)
     },
@@ -227,7 +217,6 @@ export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getFloat64(fieldOffset, true)
     },
@@ -247,7 +236,6 @@ export function string(
   const TEXT_DECODER = new TextDecoder()
   const TEXT_ENCODER = new TextEncoder()
   return {
-    enumerable: true,
     get() {
       const str = TEXT_DECODER.decode(
         structBytes(this, fieldOffset, fieldOffset + byteLength),
@@ -273,7 +261,6 @@ export function string(
  */
 export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
   return {
-    enumerable: true,
     get() {
       return Boolean(structDataView(this).getUint8(fieldOffset))
     },
@@ -292,7 +279,6 @@ export function fromDataView<T>(
   fieldGetter: (dv: DataView) => T,
 ): StructPropertyDescriptor<T> {
   return {
-    enumerable: true,
     get() {
       const dv = structDataView(this)
       return fieldGetter(dv)
@@ -349,7 +335,6 @@ export function typedArray<T>(
 ): StructPropertyDescriptor<T> {
   const { length, species } = kwargs
   return {
-    enumerable: true,
     get() {
       const dv = structDataView(this)
       let lengthValue
@@ -376,7 +361,6 @@ export function typedArray<T>(
  */
 export function u16be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getUint16(fieldOffset, false)
     },
@@ -390,7 +374,6 @@ export function u16be(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function u32be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getUint32(fieldOffset, false)
     },
@@ -404,7 +387,6 @@ export function u32be(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function u64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getBigUint64(fieldOffset, false)
     },
@@ -418,7 +400,6 @@ export function u64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
  */
 export function i16be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getInt16(fieldOffset, false)
     },
@@ -432,7 +413,6 @@ export function i16be(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function i32be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getInt32(fieldOffset, false)
     },
@@ -446,7 +426,6 @@ export function i32be(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function i64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getBigInt64(fieldOffset, false)
     },
@@ -467,7 +446,6 @@ export function f16be(fieldOffset: number): StructPropertyDescriptor<number> {
     throw new TypeError("float16 is not supported in this environment")
   }
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getFloat16(fieldOffset, false)
     },
@@ -482,7 +460,6 @@ export function f16be(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function f32be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getFloat32(fieldOffset, false)
     },
@@ -497,7 +474,6 @@ export function f32be(fieldOffset: number): StructPropertyDescriptor<number> {
  */
 export function f64be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
-    enumerable: true,
     get() {
       return structDataView(this).getFloat64(fieldOffset, false)
     },

@@ -127,13 +127,31 @@ function subclassWithProperties<
 
 /**
  * Subclass struct by adding the given property descriptors
- * @param propertyDescriptors properties to add to subclass instances
+ * @param propertyDescriptors properties to add to subclass instances.
+ *   If enumerable is not specified, it will default to true.
  * @returns A new class, inheriting from `Struct`, with the new property descriptors added
  */
 export function defineStruct<const Props extends PropertyDescriptorMap>(
   propertyDescriptors: Props,
 ): SubclassWithProperties<typeof Struct, MixinFromProps<Props>> {
-  return subclassWithProperties(Struct, propertyDescriptors)
+  function defaultEnumerable(descriptor: PropertyDescriptor) {
+    return Object.create(descriptor, {
+      enumerable: { value: descriptor.enumerable ?? true },
+    })
+  }
+  const newDescriptorEntries = Object.entries(propertyDescriptors).map(
+    (
+      [name, value],
+    ) => [
+      name,
+      defaultEnumerable(value),
+    ],
+  )
+  const newDescriptors = Object.fromEntries(
+    newDescriptorEntries,
+  ) as Props
+
+  return subclassWithProperties(Struct, newDescriptors)
 }
 
 /**

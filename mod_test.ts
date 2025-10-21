@@ -53,6 +53,17 @@ Deno.test("struct has no enumerable properties", () => {
     fail(`unexpected key '${x}'`)
   }
 })
+Deno.test("defineStruct makes enumerable properties", () => {
+  class S extends defineStruct({
+    x: u32(0),
+    y: f32(4),
+  }) {}
+  const enumeratedKeys = []
+  for (const k in S.prototype) {
+    enumeratedKeys.push(k)
+  }
+  assertEquals(enumeratedKeys, ["x", "y"])
+})
 
 Deno.test("struct", () => {
   const s = new Struct({ buffer: new ArrayBuffer(10) })
