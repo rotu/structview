@@ -29,8 +29,8 @@ import {
   u8,
 } from "@rotu/structview"
 
-// defineStruct returns a new class, which can be extended with custom getters, setters, and methods
-// it's recommended to always extend even if you have no additional members, so you can benefit from declaration hoisting.
+// defineStruct returns a new class, which can be extended with custom getters, setters, and methods.
+// It's recommended to always extend even if you have no additional members, so your class has a name and so the declaration is hoisted.
 class Version extends defineStruct({
   major: u8(0),
   minor: u8(1),
