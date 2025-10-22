@@ -11,8 +11,8 @@ data in a typesafe, declarative, object-oriented way.
 4. Clean object format. No risk of your struct field names colliding with
    implementation details. Type inference won't show excessive properties.
 
-![JSR Version](https://img.shields.io/jsr/v/@rotu/structview)
-![NPM Version](https://img.shields.io/npm/v/@rotu/structview)
+[![JSR Version](https://img.shields.io/jsr/v/@rotu/structview)](https://jsr.io/@rotu/structview)
+[![NPM Version](https://img.shields.io/npm/v/@rotu/structview)](https://www.npmjs.com/package/@rotu/structview)
 
 # example
 
