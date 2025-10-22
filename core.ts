@@ -51,11 +51,21 @@ export function structBytes(
  */
 export class Struct {
   [dataViewSymbol]: DataView
+
   get [Symbol.toStringTag](): string {
     return Struct.name
   }
+
   static toDataView(o: Struct): DataView {
     return o[dataViewSymbol]
+  }
+
+  static [Symbol.hasInstance](instance: unknown): boolean {
+    return (
+      typeof instance === "object" &&
+      instance !== null &&
+      dataViewSymbol in instance
+    )
   }
 
   /**
