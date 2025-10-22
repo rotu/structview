@@ -397,3 +397,30 @@ Deno.test("typedArray", () => {
   const f32s2 = new Float32Array([1 / 3, 1 / 6, 1 / 9])
   assertEquals(new Float32Array(buf.buffer.slice(4, 16)), f32s2)
 })
+
+Deno.test("getter-only properties inferred as readonly", () => {
+  class S extends defineStruct({
+    y: {
+      get() {
+        return 42
+      },
+    },
+    z: typedArray(9, { species: Uint8Array, length: 3 }),
+    s: substruct(Struct, 0),
+  }) {}
+  const obj = new S(new Uint8Array(10))
+
+  // note: this test is about the type assertions
+  assertThrows(() => {
+    // @ts-expect-error assigning to readonly property
+    obj.y = 1
+  })
+  assertThrows(() => {
+    // @ts-expect-error assigning to readonly property
+    obj.z = new Uint8Array()
+  })
+  assertThrows(() => {
+    // @ts-expect-error assigning to readonly property
+    obj.s = {}
+  })
+})

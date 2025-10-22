@@ -5,6 +5,7 @@
 
 import { structBytes, structDataView } from "./core.ts"
 import type {
+  ReadOnlyAccessorDescriptor,
   StructConstructor,
   StructPropertyDescriptor,
   TypedArraySpecies,
@@ -277,7 +278,7 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
  */
 export function fromDataView<T>(
   fieldGetter: (dv: DataView) => T,
-): StructPropertyDescriptor<T> {
+): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
   return {
     get() {
       const dv = structDataView(this)
@@ -299,7 +300,7 @@ export function substruct<
   ctor: StructConstructor<T>,
   byteOffset?: number,
   bytelength?: number,
-): StructPropertyDescriptor<T> {
+): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
   return fromDataView(
     function (dv) {
       const offset2 = dv.byteOffset + (byteOffset ?? 0)
@@ -332,7 +333,7 @@ export function typedArray<T>(
     /** TypedArray constructor */
     readonly species: TypedArraySpecies<T>
   },
-): StructPropertyDescriptor<T> {
+): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
   const { length, species } = kwargs
   return {
     get() {

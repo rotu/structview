@@ -32,13 +32,25 @@ export type TPropertyDescriptor<T> = {
 }
 
 /**
- * Object type that would result from Object.defineProperties(p:Props)
+ * Object type that would result from Object.defineProperties({}, p:Props)
  */
-export type MixinFromProps<Props extends object> = {
-  -readonly [K in keyof Props]: Props[K] extends TPropertyDescriptor<infer V>
-    ? V
-    : unknown
-}
+export type MixinFromProps<Props extends object> =
+  & {
+    +readonly [
+      K
+        in keyof Props as (Props[K] extends ReadOnlyAccessorDescriptor<unknown>
+          ? K
+          : never)
+    ]: Props[K] extends TPropertyDescriptor<infer V> ? V : unknown
+  }
+  & {
+    -readonly [
+      K
+        in keyof Props as (Props[K] extends ReadOnlyAccessorDescriptor<unknown>
+          ? never
+          : K)
+    ]: Props[K] extends TPropertyDescriptor<infer V> ? V : unknown
+  }
 
 /**
  * Type of a property descriptor for a struct
@@ -46,6 +58,12 @@ export type MixinFromProps<Props extends object> = {
 export type StructPropertyDescriptor<T> =
   & ThisType<AnyStruct>
   & TPropertyDescriptor<T>
+
+export type ReadOnlyAccessorDescriptor<T> = {
+  get(): T
+  set?: undefined
+}
+
 export type StructConstructor<T extends object> = {
   new (arg: {
     readonly buffer: ArrayBufferLike
