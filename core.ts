@@ -52,6 +52,28 @@ export function structBytes(
 export class Struct {
   [dataViewSymbol]: DataView
 
+  /**
+   * Create a new instance of this Struct in a newly allocated buffer
+   * @param args options for allocation. Note that if the class does not have a static BYTE_LENGTH property, you *must* provide a byteLength here.
+   * @returns
+   */
+  static alloc<T extends Struct>(
+    this: { new ({ buffer }: { readonly buffer: ArrayBufferLike }): T },
+    args?: { byteLength?: number; maxByteLength?: number },
+  ): T {
+    const byteLength = args?.byteLength ?? Reflect.get(this, "BYTE_LENGTH")
+    const maxByteLength = args?.maxByteLength ??
+      Reflect.get(this, "MAX_BYTE_LENGTH")
+
+    if (typeof byteLength !== "number") {
+      throw new TypeError(
+        "Cannot allocate struct - its class must have a static BYTE_LENGTH property",
+      )
+    }
+    const buffer = new ArrayBuffer(byteLength, { maxByteLength })
+    return new this({ buffer })
+  }
+
   get [Symbol.toStringTag](): string {
     return Struct.name
   }
@@ -76,7 +98,8 @@ export class Struct {
    * @remarks
    * The reason we don't use a positional argument for `byteLength` is because it's confusing - TypedArray constructors take a `length` argument that is in elements, not bytes.
    * Another reason is because this allows you to pass in a `DataView` or a `TypedArray` directly to reinterpret its memory as a struct.
-   */
+   *
+   * Instead of passing an undefined `buffer` property, consider using the `.alloc` static method. */
   constructor(
     arg:
       | {

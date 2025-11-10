@@ -424,3 +424,28 @@ Deno.test("getter-only properties inferred as readonly", () => {
     obj.s = {}
   })
 })
+
+Deno.test("alloc", () => {
+  class Unsized extends defineStruct({}) {}
+  class Sized extends defineStruct({ x: u8(0) }) {
+    static BYTE_LENGTH = 7
+  }
+  // must provide byte length for unsized structs
+  assertThrows(() => {
+    Unsized.alloc()
+  })
+  const x3 = new Unsized({ buffer: undefined, byteLength: 3 })
+  assertEquals(structDataView(x3).byteLength, 3)
+  const x4 = Unsized.alloc({ byteLength: 4 })
+  assertEquals(structDataView(x4).byteLength, 4)
+
+  // can elide the byte length for sized structs
+  const y = Sized.alloc()
+  assertEquals(structDataView(y).byteLength, 7)
+  // can override the byte length in the constructor
+  const z = Sized.alloc({ byteLength: 20 })
+  assertEquals(structDataView(z).byteLength, 20)
+
+  // ensure correct typing (that alloc doesn't return a bare Struct)
+  const _zz: Sized = z
+})

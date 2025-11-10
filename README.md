@@ -75,7 +75,7 @@ class Menu extends defineArray({
   length: 3,
 }) {}
 
-const myMenu = new Menu({ byteLength: 48 })
+const myMenu = Menu.alloc({ byteLength: 48 })
 Object.assign(myMenu.item(0), { name: "garden salad", price: 4 })
 Object.assign(myMenu.item(1), { name: "soup du jour", price: 2.5 })
 Object.assign(myMenu.item(2), { name: "fries", price: 2.25 })
