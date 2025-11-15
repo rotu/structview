@@ -302,7 +302,7 @@ export function substruct<
   bytelength?: number,
 ): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
   return fromDataView(
-    function (dv) {
+    (dv) => {
       const offset2 = dv.byteOffset + (byteOffset ?? 0)
       const bytelength2 = bytelength ?? (dv.byteLength - (byteOffset ?? 0))
       return Reflect.construct(ctor, [{
@@ -338,7 +338,7 @@ export function typedArray<T>(
   return {
     get() {
       const dv = structDataView(this)
-      let lengthValue
+      let lengthValue: number | undefined
       if (typeof length === "undefined") {
         lengthValue = Math.floor(
           (dv.byteLength - fieldOffset) / species.BYTES_PER_ELEMENT,
