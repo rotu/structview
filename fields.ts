@@ -321,7 +321,7 @@ export function substruct<
  *
  * I'm not totally happy with this.
  * - TypedArray does not support endianness.
- * - Changing the length property of the parent struct will not change the length of the returned value. `a=x.ar; x.arlength=2;` will not change a's length (though a will still be a live view of the underlying buffer).
+ * - Changing the length property of the parent struct will not change the length of the returned value. `a=x.ar; x.arlength=2;` will not change a's length (though it will still be a live view of the underlying buffer).
  *
  * @param fieldOffset  where the array starts relative to the parent struct
  */
