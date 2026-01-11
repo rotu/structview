@@ -204,7 +204,7 @@ export function defineArray<Item extends object>(
 ): StructConstructor<
   {
     readonly length: number
-    element(i: number): Item
+    item(i: number): Item
   } & Iterable<Item>
 > {
   const { struct, byteStride, length } = arrayOptions
