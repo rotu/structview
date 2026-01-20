@@ -263,9 +263,9 @@ Deno.test("arrayRelative", () => {
     els: substruct(ElArray, 5),
   })
   const instance = new Cls(bytes)
-  assertEquals(instance.els.element(0).x, 2 + 0 * 3 + 5)
-  assertEquals(instance.els.element(1).x, 2 + 1 * 3 + 5)
-  assertEquals(instance.els.element(2).x, 2 + 2 * 3 + 5)
+  assertEquals(instance.els.item(0).x, 2 + 0 * 3 + 5)
+  assertEquals(instance.els.item(1).x, 2 + 1 * 3 + 5)
+  assertEquals(instance.els.item(2).x, 2 + 2 * 3 + 5)
 })
 
 Deno.test("structArray", () => {
@@ -280,10 +280,10 @@ Deno.test("structArray", () => {
   }
   const ar = new ElArray(buf)
   assertEquals(ar.length, 2)
-  assertEquals(ar.element(0).x, 0x00)
-  assertEquals(ar.element(0).y, 0x02)
-  assertEquals(ar.element(1).x, 0x03)
-  assertEquals(ar.element(1).y, 0x05)
+  assertEquals(ar.item(0).x, 0x00)
+  assertEquals(ar.item(0).y, 0x02)
+  assertEquals(ar.item(1).x, 0x03)
+  assertEquals(ar.item(1).y, 0x05)
 
   // and that iteration/unpacking works
   const [el0, el1, el2] = ar
@@ -308,10 +308,10 @@ Deno.test("dynamicLength", () => {
   assertEquals(ar1.length, 3)
   assertEquals(ar2.length, 7)
 
-  ar1.element(2).x = -21
+  ar1.item(2).x = -21
   assertEquals(buf1[6], 235)
 
-  ar2.element(6).y = -67
+  ar2.item(6).y = -67
   assertEquals(buf2[20], 189)
 })
 
@@ -328,19 +328,19 @@ Deno.test("can copy", () => {
   })
 
   const myMenu = new Menu(bytes)
-  Object.assign(myMenu.element(0), { name: "garden salad", price: 4 })
-  Object.assign(myMenu.element(1), { name: "soup du jour", price: 2.5 })
-  Object.assign(myMenu.element(2), { name: "fries", price: 2.25 })
+  Object.assign(myMenu.item(0), { name: "garden salad", price: 4 })
+  Object.assign(myMenu.item(1), { name: "soup du jour", price: 2.5 })
+  Object.assign(myMenu.item(2), { name: "fries", price: 2.25 })
 
   const bytesCopy = Uint8Array.from(bytes)
   const menuCopy = new Menu(bytesCopy)
   assertEquals(menuCopy.length, 3)
-  assertEquals(menuCopy.element(0).name, "garden salad")
-  assertEquals(menuCopy.element(0).price, 4)
-  assertEquals(menuCopy.element(1).name, "soup du jour")
-  assertEquals(menuCopy.element(1).price, 2.5)
-  assertEquals(menuCopy.element(2).name, "fries")
-  assertEquals(menuCopy.element(2).price, 2.25)
+  assertEquals(menuCopy.item(0).name, "garden salad")
+  assertEquals(menuCopy.item(0).price, 4)
+  assertEquals(menuCopy.item(1).name, "soup du jour")
+  assertEquals(menuCopy.item(1).price, 2.5)
+  assertEquals(menuCopy.item(2).name, "fries")
+  assertEquals(menuCopy.item(2).price, 2.25)
 })
 
 Deno.test("bigints", () => {

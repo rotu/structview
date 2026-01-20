@@ -1,4 +1,10 @@
 {
   "deno.enable": true,
-  "editor.formatOnSaveMode": "file"
+  "editor.formatOnSaveMode": "file",
+  "chat.tools.terminal.autoApprove": {
+    "/^deno test --unstable --allow-read --allow-net$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
 }
