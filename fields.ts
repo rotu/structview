@@ -272,6 +272,93 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
 }
 
 /**
+ * Field representing reserved / padding bytes.
+ *
+ * Use this to document padding or reserved regions in a struct layout without
+ * consuming a meaningful field name.  The property is non-enumerable so it is
+ * excluded from `JSON.stringify` and {@link structToObject}.
+ *
+ * @example
+ * ```ts
+ * class Header extends defineStruct({
+ *   version: u8(0),
+ *   _pad: pad(1, 3),   // 3 reserved bytes at offset 1
+ *   length: u32(4),
+ * }) {}
+ * ```
+ */
+export function pad(
+  fieldOffset: number,
+  byteLength: number,
+): StructPropertyDescriptor<Uint8Array> & ReadOnlyAccessorDescriptor<Uint8Array> {
+  return {
+    enumerable: false,
+    get() {
+      return structBytes(this, fieldOffset, fieldOffset + byteLength)
+    },
+  }
+}
+
+/**
+ * Field that maps an integer value to a string label from a provided enum map.
+ *
+ * When reading, the raw integer is looked up in `values`; if a label is found
+ * it is returned, otherwise the raw integer is returned.  When writing, you may
+ * supply either a label string or the raw integer.
+ *
+ * Inspired by enum types in kaitai-struct and restructure.
+ *
+ * @param underlying - A numeric field descriptor (e.g. `u8(0)`, `u16(4)`)
+ * @param values     - Map from integer value to label string
+ *
+ * @example
+ * ```ts
+ * const STATUS = { 0: "idle", 1: "busy", 2: "error" } as const
+ * class Packet extends defineStruct({
+ *   status: enumField(u8(0), STATUS),
+ *   data:   u32(4),
+ * }) {}
+ * const p = Packet.alloc({ byteLength: 8 })
+ * p.status = "busy"
+ * console.log(p.status) // "busy"
+ * ```
+ */
+export function enumField<const Values extends Record<number, string>>(
+  underlying: StructPropertyDescriptor<number>,
+  values: Values,
+): StructPropertyDescriptor<Values[keyof Values] | number> {
+  const reverseMap = new Map<string, number>(
+    Object.entries(values).map(([k, v]) => [v as string, Number(k)]),
+  )
+  const validLabels = [...reverseMap.keys()].map((k) => JSON.stringify(k)).join(
+    ", ",
+  )
+  return {
+    get() {
+      const raw = underlying.get!.call(this)
+      return (values[raw] ?? raw) as Values[keyof Values] | number
+    },
+    set(value) {
+      let numValue: number
+      if (typeof value === "string") {
+        const n = reverseMap.get(value)
+        if (n === undefined) {
+          throw new RangeError(
+            `Unknown enum label: ${
+              JSON.stringify(value)
+            }. Valid labels: ${validLabels}`,
+          )
+        }
+        numValue = n
+      } else {
+        numValue = value as number
+      }
+      underlying.set!.call(this, numValue)
+    },
+  }
+}
+
+/**
  * Define a descriptor based on a dataview of the struct
  * @param fieldGetter function which, given a dataview, returns
  * @returns

@@ -86,6 +86,68 @@ for (const dish of myMenu) {
 }
 ```
 
+# Additional field descriptors
+
+## `pad(fieldOffset, byteLength)` — padding / reserved bytes
+
+Document reserved or padding regions without occupying a meaningful field name.
+The property is **non-enumerable**, so it is excluded from `JSON.stringify` and
+`structToObject`.
+
+```js
+import { defineStruct, pad, u8, u32 } from "@rotu/structview"
+
+class Header extends defineStruct({
+  version: u8(0),
+  _reserved: pad(1, 3), // 3 reserved bytes
+  length: u32(4),
+}) {
+  static BYTE_LENGTH = 8
+}
+```
+
+## `enumField(underlying, values)` — integer-to-label mapping
+
+Map a raw integer field to human-readable string labels.  When reading, the
+integer is looked up in `values`; unknown integers are returned as-is.  When
+writing, you may pass a label string or the raw integer.
+
+Inspired by enum types in [kaitai-struct](https://kaitai.io/) and
+[restructure](https://github.com/nicolo-ribaudo/restructure).
+
+```js
+import { defineStruct, enumField, u8 } from "@rotu/structview"
+
+const STATUS = { 0: "idle", 1: "busy", 2: "error" }
+
+class Packet extends defineStruct({
+  status: enumField(u8(0), STATUS),
+  data: u32(4),
+}) {
+  static BYTE_LENGTH = 8
+}
+
+const p = Packet.alloc()
+p.status = "busy"
+console.log(p.status) // "busy"
+```
+
+## `structToObject(struct)` — plain-object conversion
+
+Convert any struct to a plain `Record<string, unknown>` by iterating all
+enumerable (prototype-defined) fields.  Useful for cloning, diffing, or any
+place that needs a plain JS object.
+
+```js
+import { defineStruct, f32, structToObject } from "@rotu/structview"
+
+class Vec2 extends defineStruct({ x: f32(0), y: f32(4) }) {}
+const v = Vec2.alloc({ byteLength: 8 })
+v.x = 3; v.y = 4
+const plain = structToObject(v) // { x: 3, y: 4 }
+console.log(JSON.stringify(plain)) // '{"x":3,"y":4}'
+```
+
 # Gotchas and rough edges
 
 1. Resizable structs are not yet implemented. Resizable `Arraybuffer`s only
@@ -101,5 +163,6 @@ for (const dish of myMenu) {
 3. Be careful using `TypedArray`s. They have an alignment requirement relative
    to their underlying `ArrayBuffer`.
 4. `Struct` classes define properties on the prototype, _not_ on the instance.
-   That means spread syntax (`x = {...s}`) and `JSON.stringify(s)` will _not_
-   reflect inherited fields.
+   That means spread syntax (`x = {...s}`) will _not_ reflect inherited fields.
+   However, `JSON.stringify(s)` **does** now work because `Struct` implements
+   `toJSON()`.  For spread-like use cases, use the `structToObject(s)` helper.

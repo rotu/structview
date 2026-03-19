@@ -2,6 +2,7 @@ import {
   bigintle,
   biguintle,
   bool,
+  enumField,
   f16,
   f32,
   f64,
@@ -9,6 +10,7 @@ import {
   i32,
   i64,
   i8,
+  pad,
   string,
   substruct,
   typedArray,
@@ -17,7 +19,13 @@ import {
   u64,
   u8,
 } from "./fields.ts"
-import { defineArray, defineStruct, Struct, structDataView } from "./core.ts"
+import {
+  defineArray,
+  defineStruct,
+  Struct,
+  structDataView,
+  structToObject,
+} from "./core.ts"
 
 import {
   assert,
@@ -448,4 +456,120 @@ Deno.test("alloc", () => {
 
   // ensure correct typing (that alloc doesn't return a bare Struct)
   const _zz: Sized = z
+})
+
+Deno.test("toJSON", () => {
+  class Point extends defineStruct({
+    x: f32(0),
+    y: f32(4),
+  }) {}
+  const p = Point.alloc({ byteLength: 8 })
+  p.x = 1.5
+  p.y = -2.5
+  const json = JSON.stringify(p)
+  const parsed = JSON.parse(json)
+  assertEquals(parsed.x, Math.fround(1.5))
+  assertEquals(parsed.y, Math.fround(-2.5))
+})
+
+Deno.test("toJSON nested", () => {
+  class Inner extends defineStruct({ a: u8(0), b: u8(1) }) {}
+  class Outer extends defineStruct({
+    n: u32(0),
+    inner: substruct(Inner, 4, 2),
+  }) {}
+  const o = Outer.alloc({ byteLength: 8 })
+  o.n = 42
+  o.inner.a = 7
+  o.inner.b = 9
+  const json = JSON.stringify(o)
+  const parsed = JSON.parse(json)
+  assertEquals(parsed.n, 42)
+  assertEquals(parsed.inner.a, 7)
+  assertEquals(parsed.inner.b, 9)
+})
+
+Deno.test("structToObject", () => {
+  class S extends defineStruct({
+    x: u32(0),
+    y: f32(4),
+    label: string(8, 8),
+  }) {}
+  const s = S.alloc({ byteLength: 16 })
+  s.x = 99
+  s.y = 3.14
+  s.label = "hi"
+  const obj = structToObject(s)
+  assertEquals(obj.x, 99)
+  assertEquals(obj.y, Math.fround(3.14))
+  assertEquals(obj.label, "hi")
+  // result is a plain object, not a Struct
+  assertEquals(Object.getPrototypeOf(obj), Object.prototype)
+})
+
+Deno.test("pad field is non-enumerable and returns bytes", () => {
+  class Header extends defineStruct({
+    version: u8(0),
+    _reserved: pad(1, 3),
+    length: u32(4),
+  }) {
+    static BYTE_LENGTH = 8
+  }
+  const h = Header.alloc()
+  h.version = 5
+  h.length = 100
+
+  // pad field is non-enumerable (absent from structToObject)
+  const obj = structToObject(h)
+  assertEquals(Object.keys(obj), ["version", "length"])
+
+  // pad field returns the underlying bytes as a Uint8Array
+  assertInstanceOf(h._reserved, Uint8Array)
+  assertEquals(h._reserved.byteLength, 3)
+
+  // pad bytes are live (mutations are reflected)
+  h._reserved[0] = 0xab
+  assertEquals(h._reserved[0], 0xab)
+})
+
+Deno.test("enumField read and write by label", () => {
+  const STATUS = { 0: "idle", 1: "busy", 2: "error" } as const
+  class Packet extends defineStruct({
+    status: enumField(u8(0), STATUS),
+    data: u32(4),
+  }) {
+    static BYTE_LENGTH = 8
+  }
+  const p = Packet.alloc()
+  // default value should be 0 → "idle"
+  assertEquals(p.status, "idle")
+
+  // write by label
+  p.status = "busy"
+  assertEquals(p.status, "busy")
+
+  // write by label "error"
+  p.status = "error"
+  assertEquals(p.status, "error")
+
+  // write by raw number
+  p.status = 0
+  assertEquals(p.status, "idle")
+
+  // unknown raw number returns the number itself
+  p.status = 99
+  assertEquals(p.status, 99)
+})
+
+Deno.test("enumField throws on unknown label", () => {
+  const COLOR = { 0: "red", 1: "green", 2: "blue" } as const
+  class S extends defineStruct({ color: enumField(u8(0), COLOR) }) {}
+  const s = new S({ byteLength: 1 })
+  assertThrows(
+    () => {
+      // deno-lint-ignore no-explicit-any
+      s.color = "purple" as any
+    },
+    RangeError,
+  )
 })

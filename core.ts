@@ -78,6 +78,29 @@ export class Struct {
     return Struct.name
   }
 
+  /**
+   * Return a plain object containing all enumerable struct fields.
+   *
+   * Because struct fields are defined on the prototype (not the instance),
+   * `JSON.stringify(struct)` and spread (`{ ...struct }`) would normally
+   * produce an empty object.  Implementing `toJSON` here means
+   * `JSON.stringify(struct)` works as expected.
+   *
+   * @remarks
+   * The `for...in` loop is intentional: struct fields are enumerable properties
+   * on the prototype, not own properties, so we must traverse the prototype
+   * chain to collect them.
+   */
+  toJSON(): Record<string, unknown> {
+    const result: Record<string, unknown> = {}
+    // Intentionally iterates prototype-chain properties: struct fields are
+    // defined as enumerable descriptors on the prototype by defineStruct().
+    for (const key in this) {
+      result[key] = (this as unknown as Record<string, unknown>)[key]
+    }
+    return result
+  }
+
   static toDataView(o: Struct): DataView {
     return o[dataViewSymbol]
   }
@@ -136,6 +159,32 @@ export class Struct {
       )
     }
   }
+}
+
+/**
+ * Convert a struct to a plain object containing all enumerable field values.
+ *
+ * Unlike `JSON.stringify(struct)`, which misses prototype-defined fields, or
+ * spread (`{ ...struct }`), which only copies own properties, this function
+ * walks the prototype chain and collects every enumerable field defined by
+ * `defineStruct`.
+ *
+ * @example
+ * ```ts
+ * class Point extends defineStruct({ x: f32(0), y: f32(4) }) {}
+ * const p = Point.alloc({ byteLength: 8 })
+ * p.x = 1; p.y = 2
+ * const plain = structToObject(p)  // { x: 1, y: 2 }
+ * ```
+ */
+export function structToObject(struct: AnyStruct): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  // Intentionally iterates prototype-chain properties: struct fields are
+  // defined as enumerable descriptors on the prototype by defineStruct().
+  for (const key in struct) {
+    result[key] = (struct as unknown as Record<string, unknown>)[key]
+  }
+  return result
 }
 
 /**
