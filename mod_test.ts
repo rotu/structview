@@ -5,6 +5,7 @@ import {
   f16,
   f32,
   f64,
+  fromDataView,
   i16,
   i32,
   i64,
@@ -448,4 +449,50 @@ Deno.test("alloc", () => {
 
   // ensure correct typing (that alloc doesn't return a bare Struct)
   const _zz: Sized = z
+})
+
+Deno.test("fromDataView getter-only is readonly and enumerable", () => {
+  class S extends defineStruct({
+    val: fromDataView((dv) => dv.getUint8(0)),
+  }) {}
+  const buf = new Uint8Array([42])
+  const obj = new S(buf)
+  assertEquals(obj.val, 42)
+
+  // type test: val is readonly
+  assertThrows(() => {
+    // @ts-expect-error assigning to readonly property
+    obj.val = 1
+  })
+
+  // the descriptor should be enumerable
+  const keys: string[] = []
+  for (const k in S.prototype) {
+    keys.push(k)
+  }
+  assert(keys.includes("val"))
+})
+
+Deno.test("fromDataView with setter is writable and enumerable", () => {
+  class S extends defineStruct({
+    val: fromDataView(
+      (dv) => dv.getUint8(0),
+      (dv, v) => dv.setUint8(0, v),
+    ),
+  }) {}
+  const buf = new Uint8Array([0])
+  const obj = new S(buf)
+  obj.val = 99
+  assertEquals(obj.val, 99)
+  assertEquals(buf[0], 99)
+
+  // type test: val is writable (no @ts-expect-error needed)
+  const _: number = obj.val
+
+  // the descriptor should be enumerable
+  const keys: string[] = []
+  for (const k in S.prototype) {
+    keys.push(k)
+  }
+  assert(keys.includes("val"))
 })

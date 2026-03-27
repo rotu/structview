@@ -273,13 +273,36 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
 
 /**
  * Define a descriptor based on a dataview of the struct
- * @param fieldGetter function which, given a dataview, returns
- * @returns
+ * @param fieldGetter function which, given a dataview, returns the field value
+ * @param fieldSetter optional function which, given a dataview and a value, sets the field value
+ * @returns an enumerable property descriptor; readonly if no setter is provided
  */
 export function fromDataView<T>(
   fieldGetter: (dv: DataView) => T,
-): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
+  fieldSetter: (dv: DataView, value: T) => void,
+): StructPropertyDescriptor<T>
+export function fromDataView<T>(
+  fieldGetter: (dv: DataView) => T,
+): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T>
+export function fromDataView<T>(
+  fieldGetter: (dv: DataView) => T,
+  fieldSetter?: (dv: DataView, value: T) => void,
+): StructPropertyDescriptor<T> {
+  if (fieldSetter !== undefined) {
+    return {
+      enumerable: true,
+      get() {
+        const dv = structDataView(this)
+        return fieldGetter(dv)
+      },
+      set(value) {
+        const dv = structDataView(this)
+        fieldSetter(dv, value)
+      },
+    }
+  }
   return {
+    enumerable: true,
     get() {
       const dv = structDataView(this)
       return fieldGetter(dv)
