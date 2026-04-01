@@ -117,7 +117,6 @@ export class Struct {
       throw new TypeError("Expected argument to be an object")
     }
 
-    Object.preventExtensions(this)
     if (arg.buffer) {
       this[dataViewSymbol] = new DataView(
         arg.buffer,

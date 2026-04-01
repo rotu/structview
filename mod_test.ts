@@ -76,6 +76,9 @@ Deno.test("constructor", () => {
   const buf = new ArrayBuffer(10)
   const s = new Struct({ buffer: buf })
   assertStrictEquals(structDataView(s).buffer, buf)
+  assertEquals(Object.isExtensible(s), true)
+  assertEquals(Reflect.set(s, "extra", 123), true)
+  assertEquals(Reflect.get(s, "extra"), 123)
   const s2 = new Struct({ byteLength: 13 })
   assertEquals(structDataView(s2).byteLength, 13)
   const s3 = new Struct({ byteLength: 5, byteOffset: 2 })
@@ -122,17 +125,6 @@ Deno.test("vec3", () => {
   assertEquals(someVec[0], 0)
   assertEquals(someVec[1], 42)
   assertEquals(someVec[2], 1.5)
-
-  // trying to add an out of bound value errors
-  assertThrows(() => {
-    // @ts-expect-error assignment to undeclared property
-    someVec.blahbityblah = 5
-  })
-
-  assertThrows(() => {
-    // @ts-expect-error assignment to undeclared property
-    someVec[3] = 5
-  })
 
   // can be converted to an array
   assertEquals([...someVec], [0, 42, 1.5])

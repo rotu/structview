@@ -1,6 +1,7 @@
 # Changelog
 
-This changelog is reconstructed from `deno.json` version bumps in git history.
+## 0.16.0 — 2026-04-01
+- BREAKING: `Struct` no longer calls `Object.preventExtensions()` during construction. If you want non-extensible instances, call `Object.preventExtensions()` yourself after object construction.
 
 ## 0.15.0 — 2026-03-27
 - cc3b63a — Fix fromDataView: enumerable, complete comment, optional setter, readonly inference (#5)
