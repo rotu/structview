@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.1 — 2026-04-02
+
+- Align release publishing so npm and JSR stay version-synchronized.
+
 ## 0.16.0 — 2026-04-01
 
 - BREAKING: `Struct` no longer calls `Object.preventExtensions()` during
