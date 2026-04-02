@@ -1,0 +1,7 @@
+# act configuration for running GitHub Actions workflows locally.
+# See https://nektosact.com for installation and usage.
+#
+# Uses the catthehacker/ubuntu:act-latest medium-weight runner image (~500MB),
+# which includes the tools needed to bootstrap actions and is compatible with
+# the actions used in ci.yml.
+-P ubuntu-latest=catthehacker/ubuntu:act-latest

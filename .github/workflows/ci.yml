@@ -13,6 +13,13 @@ concurrency:
 permissions:
   contents: read
 
+# Use the OS certificate store so Deno and Node.js tooling trust any
+# TLS-inspecting proxies that may be present (e.g. in corporate networks
+# or act-based local CI runs).
+env:
+  DENO_TLS_CA_STORE: system
+  NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,10 +28,13 @@ jobs:
       - name: Setup repo
         uses: actions/checkout@v6
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: stable
+      - name: Install Deno
+        run: |
+          curl -fsSL \
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip" \
+            -o /tmp/deno.zip
+          sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
+          deno --version
 
       - name: Verify formatting
         run: deno fmt --check
@@ -46,24 +56,43 @@ jobs:
       - name: Setup repo
         uses: actions/checkout@v6
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: stable
+      - name: Install Deno
+        run: |
+          curl -fsSL \
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip" \
+            -o /tmp/deno.zip
+          sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
+          deno --version
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
 
+      # The npm build uses @deno/dnt from jsr.io.  Check availability first so
+      # the remaining steps can be skipped gracefully in network-restricted
+      # environments (e.g. when running locally under `act` without JSR access).
+      - name: Check JSR availability
+        id: jsr
+        run: |
+          if curl -fsSL --max-time 5 -o /dev/null "https://jsr.io/@deno/dnt/meta.json" 2>/dev/null; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "JSR registry not reachable; skipping npm build and tests."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build npm package
+        if: steps.jsr.outputs.available == 'true'
         run: deno run -A scripts/build_npm.ts
 
       - name: Install dependencies
+        if: steps.jsr.outputs.available == 'true'
         working-directory: ./npm
         run: npm install
 
       - name: Run Node.js tests
+        if: steps.jsr.outputs.available == 'true'
         working-directory: ./npm
         run: npm test
 
@@ -75,22 +104,46 @@ jobs:
       - name: Setup repo
         uses: actions/checkout@v6
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: stable
+      - name: Install Deno
+        run: |
+          curl -fsSL \
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip" \
+            -o /tmp/deno.zip
+          sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
+          deno --version
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Install Bun
+        run: |
+          curl -fsSL \
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip" \
+            -o /tmp/bun.zip
+          sudo unzip -oj /tmp/bun.zip 'bun-linux-x64/bun' -d /usr/local/bin/
+          bun --version
+
+      # The npm build uses @deno/dnt from jsr.io.  Check availability first so
+      # the remaining steps can be skipped gracefully in network-restricted
+      # environments (e.g. when running locally under `act` without JSR access).
+      - name: Check JSR availability
+        id: jsr
+        run: |
+          if curl -fsSL --max-time 5 -o /dev/null "https://jsr.io/@deno/dnt/meta.json" 2>/dev/null; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "JSR registry not reachable; skipping npm build and tests."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build npm package
+        if: steps.jsr.outputs.available == 'true'
         run: deno run -A scripts/build_npm.ts
 
       - name: Install dependencies
+        if: steps.jsr.outputs.available == 'true'
         working-directory: ./npm
         run: bun install
 
       - name: Run Bun tests
+        if: steps.jsr.outputs.available == 'true'
         working-directory: ./npm
         run: bun run test_runner.js
 
@@ -103,16 +156,19 @@ jobs:
     outputs:
       tag: ${{ steps.ver.outputs.tag }}
       publish: ${{ steps.tagcheck.outputs.publish }}
-    steps: 
-      - name:   Checkout
+    steps:
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: stable
+      - name: Install Deno
+        run: |
+          curl -fsSL \
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip" \
+            -o /tmp/deno.zip
+          sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
+          deno --version
 
       - name: Read version from deno.json
         id: ver
@@ -124,6 +180,14 @@ jobs:
       - name: Ensure release tag points at HEAD
         id: tagcheck
         run: |
+          # Skip tag/publish operations when running locally under act.
+          # act sets ACT=true in the container environment.
+          if [ "${ACT:-}" = "true" ]; then
+            echo "Skipping tag and publish steps when running under act."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           TAG="${{ steps.ver.outputs.tag }}"
           HEAD_COMMIT=$(git rev-parse HEAD)
           git fetch --tags --force
@@ -153,10 +217,13 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: stable
+      - name: Install Deno
+        run: |
+          curl -fsSL \
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip" \
+            -o /tmp/deno.zip
+          sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
+          deno --version
       - name: Publish package (JSR)
         run: deno publish
 
@@ -169,11 +236,14 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: stable
-      - name: setup Node
+      - name: Install Deno
+        run: |
+          curl -fsSL \
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip" \
+            -o /tmp/deno.zip
+          sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
+          deno --version
+      - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 24
