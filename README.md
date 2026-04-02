@@ -106,5 +106,6 @@ for (const dish of myMenu) {
 3. Be careful using `TypedArray`s. They have an alignment requirement relative
    to their underlying `ArrayBuffer`.
 4. `Struct` classes define properties on the prototype, _not_ on the instance.
-   That means spread syntax (`x = {...s}`) and `JSON.stringify(s)` will _not_
-   reflect inherited fields.
+   That means spread syntax (`x = {...s}`) will _not_ reflect inherited fields.
+   `JSON.stringify(s)` _does_ work because `Struct` provides a `toJSON()`
+   method. To get a spreadable plain object, use `s.toJSON()`.

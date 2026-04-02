@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.0
+
+- Add `toJSON()` method to `Struct` so `JSON.stringify(struct)` works out of the
+  box, serializing all enumerable inherited fields.
+- Add `ARCHITECTURE.md` documenting design trade-offs (property descriptors vs
+  proxies vs instance descriptors).
+
 ## 0.16.1 — 2026-04-02
 
 - Align release publishing so npm and JSR stay version-synchronized.

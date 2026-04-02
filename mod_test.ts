@@ -488,6 +488,42 @@ test("fromDataView with setter is writable and enumerable", () => {
   assert(keys.includes("val"))
 })
 
+test("toJSON with primitive fields", () => {
+  class S extends defineStruct({
+    x: u8(0),
+    y: f32(4),
+    name: string(8, 5),
+  }) {}
+  const buf = new Uint8Array(13)
+  const s = new S(buf)
+  s.x = 42
+  s.y = 1.5
+  s.name = "hello"
+  deepStrictEqual(s.toJSON(), { x: 42, y: 1.5, name: "hello" })
+  deepStrictEqual(JSON.parse(JSON.stringify(s)), { x: 42, y: 1.5, name: "hello" })
+})
+
+test("toJSON with substruct", () => {
+  const Point = defineStruct({ x: f32(0), y: f32(4) })
+  const Rect = defineStruct({
+    origin: substruct(Point, 0, 8),
+    size: substruct(Point, 8, 8),
+  })
+  const buf = new Float32Array([1, 2, 3, 4])
+  const rect = new Rect(buf)
+  const json = JSON.parse(JSON.stringify(rect))
+  deepStrictEqual(json, {
+    origin: { x: 1, y: 2 },
+    size: { x: 3, y: 4 },
+  })
+})
+
+test("toJSON on empty struct", () => {
+  const s = new Struct({ buffer: new ArrayBuffer(0) })
+  deepStrictEqual(s.toJSON(), {})
+  deepStrictEqual(JSON.stringify(s), "{}")
+})
+
 function hexToUint8Array(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) {
     throw new TypeError("Hex input must have an even length")

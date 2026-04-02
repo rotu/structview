@@ -74,6 +74,18 @@ export class Struct {
     return new this({ buffer })
   }
 
+  /**
+   * Serialize enumerable fields to a plain object.
+   * Enables `JSON.stringify(struct)` to include inherited prototype fields.
+   */
+  toJSON(): Record<string, unknown> {
+    const result: Record<string, unknown> = {}
+    for (const key in this) {
+      result[key] = (this as Record<string, unknown>)[key]
+    }
+    return result
+  }
+
   get [Symbol.toStringTag](): string {
     return Struct.name
   }
