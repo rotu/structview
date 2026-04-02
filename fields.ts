@@ -12,14 +12,14 @@ import type {
   TypedArraySpecies,
 } from "./types.ts"
 
-type FieldValue<T> = T | string | ((struct: AnyStruct) => T)
-type BooleanFieldValue = FieldValue<boolean>
-type NumberFieldValue = FieldValue<number>
-type OptionalNumberFieldValue = FieldValue<number | undefined> | undefined
+type ResolvableValue<T> = T | string | ((struct: AnyStruct) => T)
+type BooleanFieldValue = ResolvableValue<boolean>
+type NumberFieldValue = ResolvableValue<number>
+type OptionalNumberFieldValue = ResolvableValue<number | undefined> | undefined
 
 function resolveFieldValue<T>(
   struct: AnyStruct,
-  value: FieldValue<T>,
+  value: ResolvableValue<T>,
 ): T {
   if (typeof value === "function") {
     return value(struct)
@@ -88,8 +88,8 @@ function setBooleanFieldValue(
 
 function dataViewField<T>(
   fieldOffset: NumberFieldValue,
-  fieldGetter: (dv: DataView, fieldOffset: number) => T,
-  fieldSetter: (dv: DataView, fieldOffset: number, value: T) => void,
+  fieldGetter: (dv: DataView, offset: number) => T,
+  fieldSetter: (dv: DataView, offset: number, value: T) => void,
 ): StructPropertyDescriptor<T> {
   return {
     get() {
@@ -420,7 +420,9 @@ export function optional<T>(
 ): StructPropertyDescriptor<T | undefined> {
   const getter = field.get
   if (typeof getter !== "function") {
-    throw new TypeError("optional() requires a getter")
+    throw new TypeError(
+      "optional() requires a field descriptor with a getter function",
+    )
   }
   const presentDescriptor = typeof present === "object"
     ? present
