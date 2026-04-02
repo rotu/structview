@@ -257,7 +257,7 @@ export function bigintle(
   return {
     get() {
       const resolvedOffset = resolveNumberFieldValue(this, offset, "fieldOffset")
-      const resolvedByteLength = resolveNumberFieldValue(
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
         this,
         byteLength,
         "byteLength",
@@ -271,7 +271,7 @@ export function bigintle(
     },
     set(value) {
       const resolvedOffset = resolveNumberFieldValue(this, offset, "fieldOffset")
-      const resolvedByteLength = resolveNumberFieldValue(
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
         this,
         byteLength,
         "byteLength",
@@ -392,7 +392,7 @@ export function bool(fieldOffset: NumberFieldValue): StructPropertyDescriptor<bo
 }
 
 export function optional<T>(
-  field: StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T>,
+  field: StructPropertyDescriptor<T> & { get(): T; set?: undefined },
   present:
     | BooleanFieldValue
     | {
