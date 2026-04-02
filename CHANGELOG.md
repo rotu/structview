@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Add `optional()` field wrapper for optional (possibly-absent) fields.
+  Supports sentinel-value and predicate-function presence strategies.
+  The writability of the returned descriptor matches the wrapped descriptor.
+- Extend `string()` with a dynamic-length overload: pass
+  `{ length: propertyName | (dv) => number }` as the second argument to create
+  a read-only variable-length string field.
+- Extend `typedArray()` `length` option to also accept a
+  `(dv: DataView) => number` function in addition to a number or property name.
+
 ## 0.16.1 — 2026-04-02
 
 - Align release publishing so npm and JSR stay version-synchronized.

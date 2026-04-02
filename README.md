@@ -108,3 +108,109 @@ for (const dish of myMenu) {
 4. `Struct` classes define properties on the prototype, _not_ on the instance.
    That means spread syntax (`x = {...s}`) and `JSON.stringify(s)` will _not_
    reflect inherited fields.
+
+# Optional and variable-length fields
+
+## Optional fields — `optional(descriptor, presence)`
+
+Wrap any field descriptor with `optional()` to make it return `null` when the
+field is absent.  Two presence strategies are supported:
+
+### Sentinel value
+
+A field is absent when its stored value equals the sentinel (compared via
+`Object.is`).  Writing `null` stores the sentinel.
+
+```js
+import { defineStruct, optional, u16, u32 } from "@rotu/structview"
+
+// 0xFFFF is the conventional "not present" marker for a u16
+const Msg = defineStruct({
+  id:    u16(0),
+  extra: optional(u32(4), { sentinel: 0xffffffff }),
+})
+
+const msg = Msg.alloc({ byteLength: 8 })
+msg.id = 1
+msg.extra = null        // writes 0xffffffff into bytes 4-7
+console.log(msg.extra)  // → null
+
+msg.extra = 99
+console.log(msg.extra)  // → 99
+```
+
+### Predicate function
+
+A field is absent when a `(dv: DataView) => boolean` function returns `false`.
+Setting to `null` is a no-op; the presence flag must be managed separately.
+
+```js
+const Packet = defineStruct({
+  flags:   u8(0),
+  payload: optional(u32(4), (dv) => (dv.getUint8(0) & 0x01) !== 0),
+})
+
+const pkt = Packet.alloc({ byteLength: 8 })
+console.log(pkt.payload)  // → null (flag bit not set)
+
+pkt.flags = 1
+pkt.payload = 42
+console.log(pkt.payload)  // → 42
+```
+
+The returned descriptor is **writable when the wrapped descriptor is writable**,
+and **read-only when the wrapped descriptor is read-only** (e.g. `substruct`,
+`typedArray`, or `fromDataView` without a setter).
+
+## Variable-length strings — `string(offset, { length })`
+
+Pass an options object as the second argument to create a **read-only**
+variable-length string field.  The byte length can be a property name on the
+struct or a function of the `DataView`.
+
+```js
+import { defineStruct, string, u8 } from "@rotu/structview"
+
+const Frame = defineStruct({
+  name_len: u8(0),
+  // byte length is read from the `name_len` field at access time
+  name: string(1, { length: "name_len" }),
+})
+```
+
+Or with a function:
+
+```js
+const Frame = defineStruct({
+  name: string(1, { length: (dv) => dv.getUint8(0) }),
+})
+```
+
+> **Note:** Variable-length string fields are read-only.  To write a
+> variable-length string, update the backing buffer directly (e.g. via a
+> `typedArray` or `fromDataView` with a custom setter).
+
+## Variable-length typed arrays — `typedArray(offset, { species, length })`
+
+The existing `typedArray` helper already supports a numeric length and a
+property-name length.  It now also accepts a `(dv: DataView) => number`
+function:
+
+```js
+import { defineStruct, typedArray, u8 } from "@rotu/structview"
+
+const Blob = defineStruct({
+  count:  u8(0),
+  values: typedArray(4, {
+    species: Float32Array,
+    length:  (dv) => dv.getUint8(0),
+  }),
+})
+
+const blob = Blob.alloc({ byteLength: 20 })
+blob.count = 3
+blob.values[0] = 1.5
+blob.values[1] = 2.5
+blob.values[2] = 3.5
+```
+
