@@ -16,6 +16,10 @@ permissions:
 # Use the OS certificate store so Deno and Node.js tooling trust any
 # TLS-inspecting proxies that may be present (e.g. in corporate networks
 # or act-based local CI runs).
+# - DENO_TLS_CA_STORE=system: uses the OS trust store for Deno's TLS
+# - NODE_EXTRA_CA_CERTS: appends the OS bundle to Node's built-in store;
+#   /etc/ssl/certs/ca-certificates.crt is the standard path on all
+#   Debian/Ubuntu systems (ubuntu-latest and catthehacker/ubuntu:act-*)
 env:
   DENO_TLS_CA_STORE: system
   NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
@@ -243,7 +247,7 @@ jobs:
             -o /tmp/deno.zip
           sudo unzip -o /tmp/deno.zip deno -d /usr/local/bin/
           deno --version
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24

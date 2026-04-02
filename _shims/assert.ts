@@ -5,6 +5,9 @@
 // package @std/assert when that registry is not reachable (e.g. in
 // network-restricted CI environments running under `act`).
 //
+// Runtime requirements: Deno 2.x (which has built-in Node.js compatibility
+// via the node: URL scheme) or any Node.js runtime.
+//
 // The shim covers only the functions actually imported by the project's tests.
 // Error messages are plain-text (no colored diffs), but pass/fail behavior is
 // identical to the real package.
