@@ -1,6 +1,6 @@
 {
   "name": "@rotu/structview",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "license": "MIT",
   "tasks": {
     "validate": "deno run -A scripts/sync-package-metadata.ts --check && deno fmt --check && deno lint && deno x vitest run && deno publish --dry-run --allow-dirty && npm pack --dry-run"

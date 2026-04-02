@@ -1,6 +1,6 @@
 {
   "name": "@rotu/structview",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "Read and write structured binary data with typesafe views",
   "license": "MIT",
   "type": "module",
