@@ -30,32 +30,93 @@ permissions:
   contents: write
   id-token: write
 
-env:
-  DENO_VERSION: latest
-  NPM_DIR: ./npm
-
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_BUMP: ${{ inputs.bump }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_PUBLISH: ${{ inputs.publish }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: lts
           registry-url: https://registry.npmjs.org
 
-      - run: deno run -A scripts/pipeline.ts release
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: lts
+
+      - name: Resolve release version
+        id: version
+        run: deno run -A scripts/release-helper.ts resolve >> "$GITHUB_OUTPUT"
+
+      - name: Ensure release tag does not already exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git rev-parse --verify "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::Tag already exists: ${{ steps.version.outputs.tag }}"
+            exit 1
+          fi
+
+      - name: Extract release notes from changelog
         env:
-          RELEASE_BUMP: ${{ inputs.bump }}
-          RELEASE_VERSION: ${{ inputs.version }}
-          RELEASE_PUBLISH: ${{ inputs.publish }}
-          NPM_DIR: ${{ env.NPM_DIR }}
-          GITHUB_TOKEN: ${{ github.token }}
-          NODE_AUTH_TOKEN: ""
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          export RELEASE_NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          deno run -A scripts/release-helper.ts notes
+
+      - name: Sync version files
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version
+          deno run -A scripts/sync-package-metadata.ts
+
+      - name: Validate npm package contents
+        run: npm pack --dry-run
+
+      - if: env.RELEASE_PUBLISH != 'true'
+        name: Run publish dry-runs
+        run: |
+          set -euo pipefail
+          deno publish --dry-run --allow-dirty
+          npm publish --provenance --dry-run
+
+      - if: env.RELEASE_PUBLISH == 'true'
+        name: Commit and tag release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package.json deno.json
+
+          if git diff --cached --quiet; then
+            echo "::error::No version changes to commit"
+            exit 1
+          fi
+
+          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin HEAD
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - if: env.RELEASE_PUBLISH == 'true'
+        name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ steps.version.outputs.tag }}" --notes-file "$RUNNER_TEMP/release-notes.md"
+
+      - if: env.RELEASE_PUBLISH == 'true'
+        name: Publish to JSR and npm
+        run: |
+          set -euo pipefail
+          deno publish
+          npm publish --provenance

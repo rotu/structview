@@ -1,0 +1,32 @@
+{
+  "name": "@rotu/structview",
+  "version": "0.16.0",
+  "description": "Read and write structured binary data with typesafe views",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rotu/structview"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./bigendian": "./bigendian.ts",
+    "./package.json": "./package.json"
+  },
+  "types": "./mod.ts",
+  "files": [
+    "bigendian.ts",
+    "core.ts",
+    "fields.ts",
+    "mod.ts",
+    "types.ts",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.2"
+  }
+}

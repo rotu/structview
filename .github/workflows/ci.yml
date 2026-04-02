@@ -1,70 +1,52 @@
 name: CI
-
 on:
   push:
     branches: ["**"]
   pull_request:
     branches: ["main"]
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 permissions:
   contents: read
-
-env:
-  DENO_VERSION: latest
-  NPM_ARTIFACT_NAME: npm-package
-  NPM_DIR: ./npm
-
 jobs:
-  validate-deno:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm install --no-package-lock --ignore-scripts
       - uses: denoland/setup-deno@v2
         with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - run: deno run -A scripts/pipeline.ts validate-deno
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.NPM_ARTIFACT_NAME }}
-          path: ${{ env.NPM_DIR }}
-          if-no-files-found: error
-
-  test-js-engines:
+          deno-version: latest
+      - name: Validate source and package outputs
+        run: deno task validate
+  test-node:
     runs-on: ubuntu-latest
-    needs: validate-deno
+    needs: validate
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runtime: node
-            version: 22
-          - runtime: node
-            version: 24
-          - runtime: bun
-            version: latest
-
+        node-version: [22, 24]
     steps:
-      - if: matrix.runtime == 'node'
-        uses: actions/setup-node@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.version }}
-
-      - if: matrix.runtime == 'bun'
-        uses: oven-sh/setup-bun@v2
-
-      - uses: actions/download-artifact@v5
+          node-version: ${{ matrix.node-version }}
+      - run: npm install --no-package-lock --ignore-scripts
+      - run: npm x vitest run
+  test-bun:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          name: ${{ env.NPM_ARTIFACT_NAME }}
-          path: ${{ env.NPM_DIR }}
-
-      - run: deno run -A scripts/pipeline.ts test-runtime
-        env:
-          CI_RUNTIME: ${{ matrix.runtime }}
-          NPM_DIR: ${{ env.NPM_DIR }}
+          node-version: 24
+      - run: npm install --no-package-lock --ignore-scripts
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun x vitest run

@@ -14,27 +14,10 @@ data in a typesafe, declarative, object-oriented way.
 [![JSR Version](https://img.shields.io/jsr/v/@rotu/structview)](https://jsr.io/@rotu/structview)
 [![NPM Version](https://img.shields.io/npm/v/@rotu/structview)](https://www.npmjs.com/package/@rotu/structview)
 
-# Local git hooks
+# Development
 
-To catch formatting and linting failures before CI:
-
-```sh
-deno task hooks:install
-```
-
-This enables repository hooks in `.githooks/`:
-
-1. `pre-commit`: runs `deno fmt --check` and `deno lint`.
-
-# Releases
-
-Use the manual GitHub Actions workflow `Release` to cut a release.
-
-1. Choose a version bump (`patch`, `minor`, `major`) or provide an explicit
-   version.
-2. Ensure `CHANGELOG.md` includes a matching `## X.Y.Z` section.
-3. Run with `publish=true` to publish to JSR and npm, or `publish=false` for
-   dry-run publish checks.
+Contributor workflow notes, local commands, hooks, and release steps live in
+`AGENTS.md`.
 
 # example
 

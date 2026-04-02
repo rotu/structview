@@ -4,7 +4,9 @@
  * @module
  */
 
-import { assertEquals } from "@std/assert/equals"
+import { deepStrictEqual } from "node:assert/strict"
+import { bench, describe } from "vitest"
+
 import { defineStruct, f32, f64, string, u16, u32, u8 } from "./mod.ts"
 
 const StructClass = defineStruct({
@@ -56,43 +58,47 @@ function manualPack(
   return ab
 }
 
-Deno.bench("pack with Struct", { group: "pack", baseline: true }, () => {
-  const result = new Uint8Array(BYTE_LENGTH)
-  const s = new StructClass(result)
-  s.x1 = testObject.x1
-  s.x2 = testObject.x2
-  s.x3 = testObject.x3
-  s.x4 = testObject.x4
-  s.x5 = testObject.x5
-  s.x6 = testObject.x6
-  assertEquals(result, testBytes)
-})
+describe("pack", () => {
+  bench("with Struct", () => {
+    const result = new Uint8Array(BYTE_LENGTH)
+    const s = new StructClass(result)
+    s.x1 = testObject.x1
+    s.x2 = testObject.x2
+    s.x3 = testObject.x3
+    s.x4 = testObject.x4
+    s.x5 = testObject.x5
+    s.x6 = testObject.x6
+    deepStrictEqual(result, testBytes)
+  })
 
-Deno.bench("pack manually", { group: "pack" }, () => {
-  const result = manualPack(testObject)
-  assertEquals(new Uint8Array(result), testBytes)
+  bench("manually", () => {
+    const result = manualPack(testObject)
+    deepStrictEqual(new Uint8Array(result), testBytes)
+  })
 })
 
 // Surprisingly, this turns out to be *faster* than the DataView version! I think it's because of V8 optimizations for a class instance vs an object literal.
-Deno.bench("unpack with Struct", { group: "unpack", baseline: true }, () => {
-  const result = new StructClass({
-    buffer: testBytes.buffer,
-    byteLength: BYTE_LENGTH,
+describe("unpack", () => {
+  bench("with Struct", () => {
+    const result = new StructClass({
+      buffer: testBytes.buffer,
+      byteLength: BYTE_LENGTH,
+    })
+    deepStrictEqual(result.x1, testObject.x1)
+    deepStrictEqual(result.x2, testObject.x2)
+    deepStrictEqual(result.x3, testObject.x3)
+    deepStrictEqual(result.x4, testObject.x4)
+    deepStrictEqual(result.x5, testObject.x5)
+    deepStrictEqual(result.x6, testObject.x6)
   })
-  assertEquals(result.x1, testObject.x1)
-  assertEquals(result.x2, testObject.x2)
-  assertEquals(result.x3, testObject.x3)
-  assertEquals(result.x4, testObject.x4)
-  assertEquals(result.x5, testObject.x5)
-  assertEquals(result.x6, testObject.x6)
-})
 
-Deno.bench("unpack manually", { group: "unpack" }, () => {
-  const result = manualUnpack(testBytes.buffer)
-  assertEquals(result.x1, testObject.x1)
-  assertEquals(result.x2, testObject.x2)
-  assertEquals(result.x3, testObject.x3)
-  assertEquals(result.x4, testObject.x4)
-  assertEquals(result.x5, testObject.x5)
-  assertEquals(result.x6, testObject.x6)
+  bench("manually", () => {
+    const result = manualUnpack(testBytes.buffer)
+    deepStrictEqual(result.x1, testObject.x1)
+    deepStrictEqual(result.x2, testObject.x2)
+    deepStrictEqual(result.x3, testObject.x3)
+    deepStrictEqual(result.x4, testObject.x4)
+    deepStrictEqual(result.x5, testObject.x5)
+    deepStrictEqual(result.x6, testObject.x6)
+  })
 })

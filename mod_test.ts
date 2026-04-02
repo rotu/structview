@@ -21,17 +21,14 @@ import {
 import { defineArray, defineStruct, Struct, structDataView } from "./core.ts"
 
 import {
-  assert,
-  assertEquals,
-  assertInstanceOf,
-  assertStrictEquals,
-  assertThrows,
+  deepStrictEqual,
   fail,
-} from "@std/assert"
+  ok as assert,
+  strictEqual,
+  throws,
+} from "node:assert/strict"
 
-// Deno supports this but Node doesn't yet.
-// This is so the dnt output can run in Node
-import { hexToUint8Array, uint8ArrayToHex } from "uint8array-extras"
+import { expect, test } from "vitest"
 
 class vec3_t extends defineStruct({
   0: f32(0),
@@ -48,13 +45,13 @@ class vec3_t extends defineStruct({
   }
 }
 
-Deno.test("struct has no enumerable properties", () => {
+test("struct has no enumerable properties", () => {
   const s = new Struct({ buffer: new ArrayBuffer(0) })
   for (const x in s) {
     fail(`unexpected key '${x}'`)
   }
 })
-Deno.test("defineStruct makes enumerable properties", () => {
+test("defineStruct makes enumerable properties", () => {
   class S extends defineStruct({
     x: u32(0),
     y: f32(4),
@@ -63,48 +60,48 @@ Deno.test("defineStruct makes enumerable properties", () => {
   for (const k in S.prototype) {
     enumeratedKeys.push(k)
   }
-  assertEquals(enumeratedKeys, ["x", "y"])
+  deepStrictEqual(enumeratedKeys, ["x", "y"])
 })
 
-Deno.test("struct", () => {
+test("struct", () => {
   const s = new Struct({ buffer: new ArrayBuffer(10) })
-  assertInstanceOf(s, Struct)
-  assertEquals(String(s), "[object Struct]")
+  expect(s).toBeInstanceOf(Struct)
+  deepStrictEqual(String(s), "[object Struct]")
 })
 
-Deno.test("constructor", () => {
+test("constructor", () => {
   const buf = new ArrayBuffer(10)
   const s = new Struct({ buffer: buf })
-  assertStrictEquals(structDataView(s).buffer, buf)
-  assertEquals(Object.isExtensible(s), true)
-  assertEquals(Reflect.set(s, "extra", 123), true)
-  assertEquals(Reflect.get(s, "extra"), 123)
+  strictEqual(structDataView(s).buffer, buf)
+  deepStrictEqual(Object.isExtensible(s), true)
+  deepStrictEqual(Reflect.set(s, "extra", 123), true)
+  deepStrictEqual(Reflect.get(s, "extra"), 123)
   const s2 = new Struct({ byteLength: 13 })
-  assertEquals(structDataView(s2).byteLength, 13)
+  deepStrictEqual(structDataView(s2).byteLength, 13)
   const s3 = new Struct({ byteLength: 5, byteOffset: 2 })
-  assertEquals(structDataView(s3).byteLength, 5)
-  assertEquals(structDataView(s3).byteOffset, 2)
-  assertInstanceOf(structDataView(s3).buffer, ArrayBuffer)
+  deepStrictEqual(structDataView(s3).byteLength, 5)
+  deepStrictEqual(structDataView(s3).byteOffset, 2)
+  expect(structDataView(s3).buffer).toBeInstanceOf(ArrayBuffer)
 
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error invalid arg
     new Struct()
   })
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error invalid arg
     new Struct(null)
   })
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error invalid arg
     new Struct({})
   })
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error invalid arg
     new Struct({ byteOffset: 1 })
   })
 })
 
-Deno.test("vec3", () => {
+test("vec3", () => {
   const bytes = new Uint8Array([
     0,
     0,
@@ -121,54 +118,54 @@ Deno.test("vec3", () => {
   ])
   const someVec = new vec3_t(bytes)
   assert(someVec instanceof Struct)
-  assertEquals(Object.getOwnPropertyNames(someVec), [])
-  assertEquals(someVec[0], 0)
-  assertEquals(someVec[1], 42)
-  assertEquals(someVec[2], 1.5)
+  deepStrictEqual(Object.getOwnPropertyNames(someVec), [])
+  deepStrictEqual(someVec[0], 0)
+  deepStrictEqual(someVec[1], 42)
+  deepStrictEqual(someVec[2], 1.5)
 
   // can be converted to an array
-  assertEquals([...someVec], [0, 42, 1.5])
+  deepStrictEqual([...someVec], [0, 42, 1.5])
 
   // can be mutated
   someVec[0] = 42
   // and mutations take
-  assertEquals(someVec[0], someVec[1])
+  deepStrictEqual(someVec[0], someVec[1])
   // mutations are propagated to the underlying buffer
-  assertEquals(bytes.slice(0, 4), bytes.slice(4, 8))
+  deepStrictEqual(bytes.slice(0, 4), bytes.slice(4, 8))
 
-  assertEquals(Object.getOwnPropertyNames(someVec), [])
+  deepStrictEqual(Object.getOwnPropertyNames(someVec), [])
 })
 
-Deno.test("string", () => {
+test("string", () => {
   const Cls = defineStruct({
     hello: string(10, 40),
   })
   const c = new Cls(new Uint8Array(60))
-  assertEquals(c.hello, "")
+  deepStrictEqual(c.hello, "")
   c.hello = "world!"
-  assertEquals(c.hello, "world!")
+  deepStrictEqual(c.hello, "world!")
   c.hello = "abc\0def"
-  assertEquals(c.hello, "abc\0def")
+  deepStrictEqual(c.hello, "abc\0def")
 })
 
-Deno.test("bool", () => {
+test("bool", () => {
   const bytes = new Uint8Array([0, -1])
   const Cls = defineStruct({
     a: bool(0),
     b: bool(1),
   })
   const c = new Cls(bytes)
-  assertEquals(c.a, false)
-  assertEquals(c.b, true)
+  deepStrictEqual(c.a, false)
+  deepStrictEqual(c.b, true)
   c.a = true
-  assertEquals(c.a, true)
-  assertEquals(bytes[0], 1)
+  deepStrictEqual(c.a, true)
+  deepStrictEqual(bytes[0], 1)
   c.a = false
-  assertEquals(c.a, false)
-  assertEquals(bytes[0], 0)
+  deepStrictEqual(c.a, false)
+  deepStrictEqual(bytes[0], 0)
 })
 
-Deno.test("substruct", () => {
+test("substruct", () => {
   const Point2D = defineStruct({ x: f32(0), y: f32(4) })
   const Square = defineStruct({
     size: f32(0),
@@ -176,14 +173,14 @@ Deno.test("substruct", () => {
   })
   const buf = new Float32Array([1, 3.5, 123])
   const square = new Square(buf)
-  assertEquals(square.size, 1)
-  assertEquals(square.center.x, 3.5)
-  assertEquals(square.center.y, 123)
+  deepStrictEqual(square.size, 1)
+  deepStrictEqual(square.center.x, 3.5)
+  deepStrictEqual(square.center.y, 123)
   square.center.x = 18
-  assertEquals(buf[1], 18)
+  deepStrictEqual(buf[1], 18)
 })
 
-Deno.test("integers", () => {
+test("integers", () => {
   const buf = new Uint8Array(16)
   for (let i = 0; i < buf.length; ++i) {
     buf[i] = i
@@ -199,54 +196,53 @@ Deno.test("integers", () => {
     as_u64: u64(1),
   })
   const b = new Integers(buf)
-  assertEquals(b.as_i8, 0x01)
-  assertEquals(b.as_u8, 0x01)
-  assertEquals(b.as_i16, 0x0201)
-  assertEquals(b.as_u16, 0x0201)
-  assertEquals(b.as_i32, 0x04030201)
-  assertEquals(b.as_u32, 0x04030201)
-  assertEquals(b.as_i64, 0x0807060504030201n)
-  assertEquals(b.as_u64, 0x0807060504030201n)
+  deepStrictEqual(b.as_i8, 0x01)
+  deepStrictEqual(b.as_u8, 0x01)
+  deepStrictEqual(b.as_i16, 0x0201)
+  deepStrictEqual(b.as_u16, 0x0201)
+  deepStrictEqual(b.as_i32, 0x04030201)
+  deepStrictEqual(b.as_u32, 0x04030201)
+  deepStrictEqual(b.as_i64, 0x0807060504030201n)
+  deepStrictEqual(b.as_u64, 0x0807060504030201n)
 })
 
-Deno.test("floats", () => {
+test("floats", () => {
   const Floats = defineStruct({
     f32: f32(4),
     f64: f64(8),
   })
   const bytes = new Uint8Array(16)
   const v = new Floats(bytes)
-  assertEquals(v.f32, 0)
-  assertEquals(v.f64, 0)
+  deepStrictEqual(v.f32, 0)
+  deepStrictEqual(v.f64, 0)
   v.f32 = 1 / 3
   v.f64 = 1 / 3
-  assertEquals(v.f32, Math.fround(1 / 3))
-  assertEquals(v.f64, 1 / 3)
+  deepStrictEqual(v.f32, Math.fround(1 / 3))
+  deepStrictEqual(v.f64, 1 / 3)
 })
 
-Deno.test({
-  name: "float16",
-  ignore: typeof DataView.prototype.getFloat16 !== "function",
-  fn: () => {
+test.skipIf(typeof DataView.prototype.getFloat16 !== "function")(
+  "float16",
+  () => {
     class S extends defineStruct({ f16: f16(0) }) {}
     const v = new S(new Uint8Array(2))
-    assertEquals(v.f16, 0)
+    deepStrictEqual(v.f16, 0)
     v.f16 = 1.5
-    assertEquals(v.f16, 1.5)
+    deepStrictEqual(v.f16, 1.5)
     v.f16 = 1 / 3
-    assertEquals(v.f16, 0.333251953125)
+    deepStrictEqual(v.f16, 0.333251953125)
   },
-})
+)
 
-Deno.test("bad property descriptor", () => {
-  assertThrows(() => {
+test("bad property descriptor", () => {
+  throws(() => {
     defineStruct({
       a: { value: 10, get: () => 42 },
     })
   })
 })
 
-Deno.test("arrayRelative", () => {
+test("arrayRelative", () => {
   const bytes = new Uint8Array(Array(255).keys())
   const El = defineStruct({
     x: u8(2),
@@ -256,12 +252,12 @@ Deno.test("arrayRelative", () => {
     els: substruct(ElArray, 5),
   })
   const instance = new Cls(bytes)
-  assertEquals(instance.els.item(0).x, 2 + 0 * 3 + 5)
-  assertEquals(instance.els.item(1).x, 2 + 1 * 3 + 5)
-  assertEquals(instance.els.item(2).x, 2 + 2 * 3 + 5)
+  deepStrictEqual(instance.els.item(0).x, 2 + 0 * 3 + 5)
+  deepStrictEqual(instance.els.item(1).x, 2 + 1 * 3 + 5)
+  deepStrictEqual(instance.els.item(2).x, 2 + 2 * 3 + 5)
 })
 
-Deno.test("structArray", () => {
+test("structArray", () => {
   const El = defineStruct({
     x: u8(0),
     y: u8(2),
@@ -272,22 +268,22 @@ Deno.test("structArray", () => {
     buf[i] = i
   }
   const ar = new ElArray(buf)
-  assertEquals(ar.length, 2)
-  assertEquals(ar.item(0).x, 0x00)
-  assertEquals(ar.item(0).y, 0x02)
-  assertEquals(ar.item(1).x, 0x03)
-  assertEquals(ar.item(1).y, 0x05)
+  deepStrictEqual(ar.length, 2)
+  deepStrictEqual(ar.item(0).x, 0x00)
+  deepStrictEqual(ar.item(0).y, 0x02)
+  deepStrictEqual(ar.item(1).x, 0x03)
+  deepStrictEqual(ar.item(1).y, 0x05)
 
   // and that iteration/unpacking works
   const [el0, el1, el2] = ar
-  assertEquals(el0.x, 0x00)
-  assertEquals(el0.y, 0x02)
-  assertEquals(el1.x, 0x03)
-  assertEquals(el1.y, 0x05)
-  assertEquals(el2, undefined)
+  deepStrictEqual(el0.x, 0x00)
+  deepStrictEqual(el0.y, 0x02)
+  deepStrictEqual(el1.x, 0x03)
+  deepStrictEqual(el1.y, 0x05)
+  deepStrictEqual(el2, undefined)
 })
 
-Deno.test("dynamicLength", () => {
+test("dynamicLength", () => {
   const El = defineStruct({
     x: i8(0),
     y: i8(2),
@@ -298,17 +294,17 @@ Deno.test("dynamicLength", () => {
   const buf2 = new Uint8Array(21)
   const ar2 = new ElArray(buf2)
 
-  assertEquals(ar1.length, 3)
-  assertEquals(ar2.length, 7)
+  deepStrictEqual(ar1.length, 3)
+  deepStrictEqual(ar2.length, 7)
 
   ar1.item(2).x = -21
-  assertEquals(buf1[6], 235)
+  deepStrictEqual(buf1[6], 235)
 
   ar2.item(6).y = -67
-  assertEquals(buf2[20], 189)
+  deepStrictEqual(buf2[20], 189)
 })
 
-Deno.test("can copy", () => {
+test("can copy", () => {
   const bytes = new Uint8Array(48)
   const Entree = defineStruct({
     price: f32(0),
@@ -327,16 +323,16 @@ Deno.test("can copy", () => {
 
   const bytesCopy = Uint8Array.from(bytes)
   const menuCopy = new Menu(bytesCopy)
-  assertEquals(menuCopy.length, 3)
-  assertEquals(menuCopy.item(0).name, "garden salad")
-  assertEquals(menuCopy.item(0).price, 4)
-  assertEquals(menuCopy.item(1).name, "soup du jour")
-  assertEquals(menuCopy.item(1).price, 2.5)
-  assertEquals(menuCopy.item(2).name, "fries")
-  assertEquals(menuCopy.item(2).price, 2.25)
+  deepStrictEqual(menuCopy.length, 3)
+  deepStrictEqual(menuCopy.item(0).name, "garden salad")
+  deepStrictEqual(menuCopy.item(0).price, 4)
+  deepStrictEqual(menuCopy.item(1).name, "soup du jour")
+  deepStrictEqual(menuCopy.item(1).price, 2.5)
+  deepStrictEqual(menuCopy.item(2).name, "fries")
+  deepStrictEqual(menuCopy.item(2).price, 2.25)
 })
 
-Deno.test("bigints", () => {
+test("bigints", () => {
   const buf = hexToUint8Array("d6ffffffffffffffffffffff0c0d0e0f10111213")
   class S extends defineStruct({
     unsigned: biguintle(2, { byteLength: 12 }),
@@ -344,54 +340,57 @@ Deno.test("bigints", () => {
   }) {}
 
   const s = new S(buf)
-  assertEquals(s.unsigned, 0xd0cffffffffffffffffffffn)
-  assertEquals(s.signed, 0xd0cffffffffffffffffffffn)
+  deepStrictEqual(s.unsigned, 0xd0cffffffffffffffffffffn)
+  deepStrictEqual(s.signed, 0xd0cffffffffffffffffffffn)
 
   s.signed = -0x42n
-  assertEquals(s.unsigned, 0xffffffffffffffffffffffben)
-  assertEquals(s.signed, -0x42n)
-  assertEquals(uint8ArrayToHex(buf), "d6ffbeffffffffffffffffffffff0e0f10111213")
+  deepStrictEqual(s.unsigned, 0xffffffffffffffffffffffben)
+  deepStrictEqual(s.signed, -0x42n)
+  deepStrictEqual(
+    uint8ArrayToHex(buf),
+    "d6ffbeffffffffffffffffffffff0e0f10111213",
+  )
 })
 
-Deno.test("typedArrayFix", () => {
+test("typedArrayFix", () => {
   const buf = new Uint8Array(40)
   class S extends defineStruct({
     f32s: typedArray(4, { species: Float32Array, length: 2 }),
   }) {}
   const instance = new S(buf)
-  assertInstanceOf(instance.f32s, Float32Array)
-  assertEquals(instance.f32s.length, 2)
+  expect(instance.f32s).toBeInstanceOf(Float32Array)
+  deepStrictEqual(instance.f32s.length, 2)
 
-  assertStrictEquals(instance.f32s.buffer, buf.buffer)
-  assertEquals(instance.f32s.byteOffset, 4)
-  assertEquals(instance.f32s.length, 2)
+  strictEqual(instance.f32s.buffer, buf.buffer)
+  deepStrictEqual(instance.f32s.byteOffset, 4)
+  deepStrictEqual(instance.f32s.length, 2)
 })
 
-Deno.test("typedArray", () => {
+test("typedArray", () => {
   const buf = new Uint8Array(40)
   class S extends defineStruct({
     data_length: u8(0),
     f32s: typedArray(4, { species: Float32Array, length: "data_length" }),
   }) {}
   const instance = new S(buf)
-  assertEquals(instance.data_length, 0)
-  assertInstanceOf(instance.f32s, Float32Array)
-  assertEquals(instance.f32s.length, 0)
-  assertStrictEquals(instance.f32s.buffer, buf.buffer)
+  deepStrictEqual(instance.data_length, 0)
+  expect(instance.f32s).toBeInstanceOf(Float32Array)
+  deepStrictEqual(instance.f32s.length, 0)
+  strictEqual(instance.f32s.buffer, buf.buffer)
   instance.data_length = 3
-  assertEquals(instance.data_length, 3)
-  assertInstanceOf(instance.f32s, Float32Array)
-  assertEquals(instance.f32s.length, 3)
-  assertStrictEquals(instance.f32s.buffer, buf.buffer)
+  deepStrictEqual(instance.data_length, 3)
+  expect(instance.f32s).toBeInstanceOf(Float32Array)
+  deepStrictEqual(instance.f32s.length, 3)
+  strictEqual(instance.f32s.buffer, buf.buffer)
 
   instance.f32s[0] = 1 / 3
   instance.f32s[1] = 1 / 6
   instance.f32s[2] = 1 / 9
   const f32s2 = new Float32Array([1 / 3, 1 / 6, 1 / 9])
-  assertEquals(new Float32Array(buf.buffer.slice(4, 16)), f32s2)
+  deepStrictEqual(new Float32Array(buf.buffer.slice(4, 16)), f32s2)
 })
 
-Deno.test("getter-only properties inferred as readonly", () => {
+test("getter-only properties inferred as readonly", () => {
   class S extends defineStruct({
     y: {
       get() {
@@ -404,55 +403,55 @@ Deno.test("getter-only properties inferred as readonly", () => {
   const obj = new S(new Uint8Array(10))
 
   // note: this test is about the type assertions
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error assigning to readonly property
     obj.y = 1
   })
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error assigning to readonly property
     obj.z = new Uint8Array()
   })
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error assigning to readonly property
     obj.s = {}
   })
 })
 
-Deno.test("alloc", () => {
+test("alloc", () => {
   class Unsized extends defineStruct({}) {}
   class Sized extends defineStruct({ x: u8(0) }) {
     static BYTE_LENGTH = 7
   }
   // must provide byte length for unsized structs
-  assertThrows(() => {
+  throws(() => {
     Unsized.alloc()
   })
   const x3 = new Unsized({ buffer: undefined, byteLength: 3 })
-  assertEquals(structDataView(x3).byteLength, 3)
+  deepStrictEqual(structDataView(x3).byteLength, 3)
   const x4 = Unsized.alloc({ byteLength: 4 })
-  assertEquals(structDataView(x4).byteLength, 4)
+  deepStrictEqual(structDataView(x4).byteLength, 4)
 
   // can elide the byte length for sized structs
   const y = Sized.alloc()
-  assertEquals(structDataView(y).byteLength, 7)
+  deepStrictEqual(structDataView(y).byteLength, 7)
   // can override the byte length in the constructor
   const z = Sized.alloc({ byteLength: 20 })
-  assertEquals(structDataView(z).byteLength, 20)
+  deepStrictEqual(structDataView(z).byteLength, 20)
 
   // ensure correct typing (that alloc doesn't return a bare Struct)
   const _zz: Sized = z
 })
 
-Deno.test("fromDataView getter-only is readonly and enumerable", () => {
+test("fromDataView getter-only is readonly and enumerable", () => {
   class S extends defineStruct({
     val: fromDataView((dv) => dv.getUint8(0)),
   }) {}
   const buf = new Uint8Array([42])
   const obj = new S(buf)
-  assertEquals(obj.val, 42)
+  deepStrictEqual(obj.val, 42)
 
   // type test: val is readonly
-  assertThrows(() => {
+  throws(() => {
     // @ts-expect-error assigning to readonly property
     obj.val = 1
   })
@@ -465,7 +464,7 @@ Deno.test("fromDataView getter-only is readonly and enumerable", () => {
   assert(keys.includes("val"))
 })
 
-Deno.test("fromDataView with setter is writable and enumerable", () => {
+test("fromDataView with setter is writable and enumerable", () => {
   class S extends defineStruct({
     val: fromDataView(
       (dv) => dv.getUint8(0),
@@ -475,8 +474,8 @@ Deno.test("fromDataView with setter is writable and enumerable", () => {
   const buf = new Uint8Array([0])
   const obj = new S(buf)
   obj.val = 99
-  assertEquals(obj.val, 99)
-  assertEquals(buf[0], 99)
+  deepStrictEqual(obj.val, 99)
+  deepStrictEqual(buf[0], 99)
 
   // type test: val is writable (no @ts-expect-error needed)
   const _: number = obj.val
@@ -488,3 +487,21 @@ Deno.test("fromDataView with setter is writable and enumerable", () => {
   }
   assert(keys.includes("val"))
 })
+
+function hexToUint8Array(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) {
+    throw new TypeError("Hex input must have an even length")
+  }
+
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = Number.parseInt(hex.slice(i, i + 2), 16)
+  }
+  return bytes
+}
+
+function uint8ArrayToHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  )
+}
