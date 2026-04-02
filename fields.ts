@@ -207,7 +207,7 @@ export function biguintle(
       )
       if (
         !Number.isInteger(resolvedByteLength) ||
-        !(0 < resolvedByteLength)
+        resolvedByteLength <= 0
       ) {
         throw new TypeError("byteLength must resolve to a positive integer")
       }
@@ -231,7 +231,7 @@ export function biguintle(
       )
       if (
         !Number.isInteger(resolvedByteLength) ||
-        !(0 < resolvedByteLength)
+        resolvedByteLength <= 0
       ) {
         throw new TypeError("byteLength must resolve to a positive integer")
       }
