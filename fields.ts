@@ -233,25 +233,60 @@ export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
 export function string(
   fieldOffset: number,
   byteLength: number,
+): StructPropertyDescriptor<string>
+/**
+ * Field for a UTF-8 string whose byte length is determined at read time.
+ *
+ * @remarks The returned descriptor is read-only because writing a string of
+ * variable size requires external coordination (e.g. also updating the length
+ * field). Use `fromDataView` for a writable custom implementation.
+ *
+ * @param fieldOffset - Byte offset of the string within the struct.
+ * @param options.length - A property name on the struct whose value gives the
+ *   byte length, or a function `(dv: DataView) => number` that computes it.
+ */
+export function string(
+  fieldOffset: number,
+  options: { readonly length: string | ((dv: DataView) => number) },
+): StructPropertyDescriptor<string> & ReadOnlyAccessorDescriptor<string>
+export function string(
+  fieldOffset: number,
+  arg: number | { readonly length: string | ((dv: DataView) => number) },
 ): StructPropertyDescriptor<string> {
   const TEXT_DECODER = new TextDecoder()
   const TEXT_ENCODER = new TextEncoder()
+  if (typeof arg === "number") {
+    const byteLength = arg
+    return {
+      get() {
+        const str = TEXT_DECODER.decode(
+          structBytes(this, fieldOffset, fieldOffset + byteLength),
+        )
+        // trim all trailing null characters
+        return str.replace(/\0+$/, "")
+      },
+      set(value) {
+        const bytes = structBytes(
+          this,
+          fieldOffset,
+          fieldOffset + byteLength,
+        )
+        bytes.fill(0)
+        TEXT_ENCODER.encodeInto(value, bytes)
+      },
+    }
+  }
+  const { length } = arg
   return {
     get() {
+      const dv = structDataView(this)
+      const len: number = typeof length === "string"
+        ? (Reflect.get(this, length) as number)
+        : length(dv)
       const str = TEXT_DECODER.decode(
-        structBytes(this, fieldOffset, fieldOffset + byteLength),
+        structBytes(this, fieldOffset, fieldOffset + len),
       )
-      // trim all trailing null characters
       return str.replace(/\0+$/, "")
-    },
-    set(value) {
-      const bytes = structBytes(
-        this,
-        fieldOffset,
-        fieldOffset + byteLength,
-      )
-      bytes.fill(0)
-      TEXT_ENCODER.encodeInto(value, bytes)
     },
   }
 }
@@ -272,11 +307,80 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
 }
 
 /**
- * Define a descriptor based on a dataview of the struct
- * @param fieldGetter function which, given a dataview, returns the field value
- * @param fieldSetter optional function which, given a dataview and a value, sets the field value
- * @returns an enumerable property descriptor; readonly if no setter is provided
+ * Wrap a field descriptor to make it optional, returning `null` when the field
+ * is considered absent.
+ *
+ * The returned descriptor inherits the writability of the wrapped descriptor:
+ * - If `descriptor` has a setter, the returned descriptor also has a setter.
+ * - If `descriptor` has no setter (read-only), the returned descriptor is
+ *   read-only too.
+ *
+ * Two presence strategies are supported:
+ *
+ * **Sentinel value** — the field is absent when its binary value equals the
+ * sentinel (compared via `Object.is`).  Setting the property to `null` writes
+ * the sentinel back into the buffer.
+ *
+ * ```ts
+ * const Cls = defineStruct({
+ *   value: optional(u16(0), { sentinel: 0xffff }),
+ * })
+ * ```
+ *
+ * **Predicate function** — the field is absent when the predicate returns
+ * `false`.  Setting the field to a non-null value writes it normally;
+ * setting to `null` is a no-op.
+ *
+ * ```ts
+ * const Cls = defineStruct({
+ *   flags: u8(0),
+ *   value: optional(u32(4), (dv) => (dv.getUint8(0) & 0x01) !== 0),
+ * })
+ * ```
  */
+export function optional<T>(
+  descriptor: StructPropertyDescriptor<T> & { set(t: T): undefined },
+  presence: ((dv: DataView) => boolean) | { readonly sentinel: T },
+): StructPropertyDescriptor<T | null>
+export function optional<T>(
+  descriptor: StructPropertyDescriptor<T>,
+  presence: ((dv: DataView) => boolean) | { readonly sentinel: T },
+): StructPropertyDescriptor<T | null> & ReadOnlyAccessorDescriptor<T | null>
+export function optional<T>(
+  descriptor: StructPropertyDescriptor<T>,
+  presence: ((dv: DataView) => boolean) | { readonly sentinel: T },
+): StructPropertyDescriptor<T | null> {
+  if (typeof presence === "function") {
+    const result: StructPropertyDescriptor<T | null> = {
+      get() {
+        if (!presence(structDataView(this))) return null
+        return descriptor.get!.call(this) as T
+      },
+    }
+    if (typeof descriptor.set === "function") {
+      result.set = function (value: T | null) {
+        if (value !== null) {
+          descriptor.set!.call(this, value)
+        }
+      }
+    }
+    return result
+  }
+  const { sentinel } = presence
+  const result: StructPropertyDescriptor<T | null> = {
+    get() {
+      const value = descriptor.get!.call(this) as T
+      return Object.is(value, sentinel) ? null : value
+    },
+  }
+  if (typeof descriptor.set === "function") {
+    result.set = function (value: T | null) {
+      descriptor.set!.call(this, value === null ? sentinel : value)
+    }
+  }
+  return result
+}
+
 export function fromDataView<T>(
   fieldGetter: (dv: DataView) => T,
   fieldSetter: (dv: DataView, value: T) => void,
@@ -351,8 +455,12 @@ export function substruct<
 export function typedArray<T>(
   fieldOffset: number,
   kwargs: {
-    /** length or property name for the length of the array */
-    readonly length: number | string | undefined
+    /** length, property name, function, or undefined (fill remaining buffer) */
+    readonly length:
+      | number
+      | string
+      | ((dv: DataView) => number)
+      | undefined
     /** TypedArray constructor */
     readonly species: TypedArraySpecies<T>
   },
@@ -370,6 +478,8 @@ export function typedArray<T>(
         lengthValue = length
       } else if (typeof length === "string") {
         lengthValue = Reflect.get(this, length)
+      } else if (typeof length === "function") {
+        lengthValue = length(dv)
       }
       return new species(
         dv.buffer,

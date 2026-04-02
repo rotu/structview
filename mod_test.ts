@@ -10,6 +10,7 @@ import {
   i32,
   i64,
   i8,
+  optional,
   string,
   substruct,
   typedArray,
@@ -486,6 +487,176 @@ test("fromDataView with setter is writable and enumerable", () => {
     keys.push(k)
   }
   assert(keys.includes("val"))
+})
+
+test("optional with sentinel (writable)", () => {
+  class S extends defineStruct({
+    value: optional(u16(0), { sentinel: 0xffff }),
+  }) {}
+  const buf = new Uint8Array(2)
+  const s = new S(buf)
+
+  // default (zeros) is not the sentinel
+  deepStrictEqual(s.value, 0)
+
+  // writing null encodes the sentinel
+  s.value = null
+  deepStrictEqual(buf[0], 0xff)
+  deepStrictEqual(buf[1], 0xff)
+  deepStrictEqual(s.value, null)
+
+  // writing a real value round-trips
+  s.value = 42
+  deepStrictEqual(s.value, 42)
+})
+
+test("optional with sentinel preserves readonly for substruct", () => {
+  const Inner = defineStruct({ x: u8(0) })
+  class S extends defineStruct({
+    // substruct returns ReadOnlyAccessorDescriptor, so optional is also readonly
+    inner: optional(substruct(Inner, 0, 1), { sentinel: new Inner({ byteLength: 1 }) }),
+  }) {}
+  const s = new S(new Uint8Array(1))
+  // type test: the property is read-only
+  throws(() => {
+    // @ts-expect-error assigning to readonly property
+    s.inner = null
+  })
+})
+
+test("optional with predicate (writable)", () => {
+  class S extends defineStruct({
+    flags: u8(0),
+    value: optional(u32(4), (dv) => (dv.getUint8(0) & 0x01) !== 0),
+  }) {}
+  const buf = new Uint8Array(8)
+  const s = new S(buf)
+
+  // flag not set → null
+  deepStrictEqual(s.value, null)
+
+  // set the presence flag → reads real value
+  s.flags = 1
+  deepStrictEqual(s.value, 0)
+
+  // write the field
+  s.value = 99
+  deepStrictEqual(s.value, 99)
+
+  // setting null when present is a no-op (value unchanged)
+  s.value = null
+  deepStrictEqual(s.value, 99)
+
+  // clear presence flag → null again
+  s.flags = 0
+  deepStrictEqual(s.value, null)
+})
+
+test("optional with predicate (readonly when descriptor is readonly)", () => {
+  const Inner = defineStruct({ x: u8(0) })
+  class S extends defineStruct({
+    flags: u8(0),
+    inner: optional(substruct(Inner, 1, 1), (dv) => dv.getUint8(0) !== 0),
+  }) {}
+  const buf = new Uint8Array(2)
+  const s = new S(buf)
+
+  deepStrictEqual(s.inner, null)
+  buf[0] = 1
+  deepStrictEqual(s.inner?.x, 0)
+
+  throws(() => {
+    // @ts-expect-error assigning to readonly property
+    s.inner = null
+  })
+})
+
+test("optional bigint sentinel", () => {
+  class S extends defineStruct({
+    value: optional(u64(0), { sentinel: 0xffffffffffffffffn }),
+  }) {}
+  const buf = new Uint8Array(8).fill(0xff)
+  const s = new S(buf)
+
+  deepStrictEqual(s.value, null)
+  s.value = 42n
+  deepStrictEqual(s.value, 42n)
+  s.value = null
+  deepStrictEqual(s.value, null)
+})
+
+test("string with dynamic length via property name", () => {
+  class S extends defineStruct({
+    name_length: u8(0),
+    name: string(1, { length: "name_length" }),
+  }) {}
+  const encoder = new TextEncoder()
+  const buf = new Uint8Array(16)
+  const encoded = encoder.encode("Hello")
+  buf[0] = encoded.length
+  buf.set(encoded, 1)
+  const s = new S(buf)
+
+  deepStrictEqual(s.name, "Hello")
+
+  // changing the length field trims the view
+  s.name_length = 3
+  deepStrictEqual(s.name, "Hel")
+
+  // length 0 → empty string
+  s.name_length = 0
+  deepStrictEqual(s.name, "")
+
+  // type test: dynamic-length string is read-only
+  throws(() => {
+    // @ts-expect-error assigning to readonly property
+    s.name = "x"
+  })
+})
+
+test("string with dynamic length via function", () => {
+  class S extends defineStruct({
+    len: u8(0),
+    data: string(1, { length: (dv) => dv.getUint8(0) }),
+  }) {}
+  const encoder = new TextEncoder()
+  const buf = new Uint8Array(16)
+  const encoded = encoder.encode("World")
+  buf[0] = encoded.length
+  buf.set(encoded, 1)
+  const s = new S(buf)
+
+  deepStrictEqual(s.data, "World")
+
+  // simulate shrinking length
+  buf[0] = 2
+  deepStrictEqual(s.data, "Wo")
+})
+
+test("typedArray with function-based length", () => {
+  class S extends defineStruct({
+    count: u8(0),
+    values: typedArray(4, {
+      species: Float32Array,
+      length: (dv) => dv.getUint8(0),
+    }),
+  }) {}
+  const buf = new Uint8Array(20)
+  const s = new S(buf)
+
+  deepStrictEqual(s.values.length, 0)
+
+  s.count = 3
+  deepStrictEqual(s.values.length, 3)
+
+  s.values[0] = 1.5
+  s.values[1] = 2.5
+  s.values[2] = 3.5
+
+  const view = new Float32Array(buf.buffer, 4, 3)
+  deepStrictEqual(view[0], 1.5)
+  deepStrictEqual(view[1], 2.5)
+  deepStrictEqual(view[2], 3.5)
 })
 
 function hexToUint8Array(hex: string): Uint8Array {
