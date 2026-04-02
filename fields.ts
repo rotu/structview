@@ -57,6 +57,18 @@ function resolveOptionalNumberFieldValue(
   return result
 }
 
+function resolvePositiveIntegerFieldValue(
+  struct: AnyStruct,
+  value: NumberFieldValue,
+  name: string,
+): number {
+  const result = resolveNumberFieldValue(struct, value, name)
+  if (!Number.isInteger(result) || result <= 0) {
+    throw new TypeError(`${name} must resolve to a positive integer`)
+  }
+  return result
+}
+
 function resolveBooleanFieldValue(
   struct: AnyStruct,
   value: BooleanFieldValue,
@@ -200,17 +212,11 @@ export function biguintle(
         fieldOffset,
         "fieldOffset",
       )
-      const resolvedByteLength = resolveNumberFieldValue(
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
         this,
         byteLength,
         "byteLength",
       )
-      if (
-        !Number.isInteger(resolvedByteLength) ||
-        resolvedByteLength <= 0
-      ) {
-        throw new TypeError("byteLength must resolve to a positive integer")
-      }
       let result = 0n
       const dv = structDataView(this)
       for (let i = 0; i < resolvedByteLength; ++i) {
@@ -224,17 +230,11 @@ export function biguintle(
         fieldOffset,
         "fieldOffset",
       )
-      const resolvedByteLength = resolveNumberFieldValue(
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
         this,
         byteLength,
         "byteLength",
       )
-      if (
-        !Number.isInteger(resolvedByteLength) ||
-        resolvedByteLength <= 0
-      ) {
-        throw new TypeError("byteLength must resolve to a positive integer")
-      }
       const dv = structDataView(this)
       for (let i = 0; i < resolvedByteLength; ++i) {
         dv.setUint8(
@@ -424,12 +424,12 @@ export function optional<T>(
       "optional() requires a field descriptor with a getter function",
     )
   }
-  const presentDescriptor = typeof present === "object"
+  const presenceConfig = typeof present === "object"
     ? present
     : { present, setPresent: present }
   const descriptor: StructPropertyDescriptor<T | undefined> = {
     get() {
-      if (!resolveBooleanFieldValue(this, presentDescriptor.present)) {
+      if (!resolveBooleanFieldValue(this, presenceConfig.present)) {
         return undefined
       }
       return getter.call(this)
@@ -440,7 +440,7 @@ export function optional<T>(
       if (typeof value === "undefined") {
         setBooleanFieldValue(
           this,
-          presentDescriptor.setPresent ?? presentDescriptor.present,
+          presenceConfig.setPresent ?? presenceConfig.present,
           false,
         )
         return
@@ -448,7 +448,7 @@ export function optional<T>(
       field.set?.call(this, value)
       setBooleanFieldValue(
         this,
-        presentDescriptor.setPresent ?? presentDescriptor.present,
+        presenceConfig.setPresent ?? presenceConfig.present,
         true,
       )
     }
