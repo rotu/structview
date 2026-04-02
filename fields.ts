@@ -75,7 +75,9 @@ function resolveBooleanFieldValue(
 ): boolean {
   const result = resolveFieldValue(struct, value)
   if (typeof result !== "boolean") {
-    throw new TypeError("present must resolve to a boolean")
+    throw new TypeError(
+      "optional field presence condition must resolve to a boolean",
+    )
   }
   return result
 }
@@ -421,7 +423,7 @@ export function optional<T>(
   const getter = field.get
   if (typeof getter !== "function") {
     throw new TypeError(
-      "optional() requires a field descriptor with a getter function",
+      "optional() requires a field descriptor with a defined 'get' method",
     )
   }
   const presenceConfig = typeof present === "object"
