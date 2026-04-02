@@ -327,8 +327,8 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
  * })
  * ```
  *
- * **Predicate function** — the field is absent when `(dv: DataView) => boolean`
- * returns `false`.  Setting the field to a non-null value writes it normally;
+ * **Predicate function** — the field is absent when the predicate returns
+ * `false`.  Setting the field to a non-null value writes it normally;
  * setting to `null` is a no-op.
  *
  * ```ts
@@ -478,7 +478,7 @@ export function typedArray<T>(
         lengthValue = length
       } else if (typeof length === "string") {
         lengthValue = Reflect.get(this, length)
-      } else {
+      } else if (typeof length === "function") {
         lengthValue = length(dv)
       }
       return new species(
