@@ -91,6 +91,33 @@ for (const dish of myMenu) {
 }
 ```
 
+# Optional and variably sized fields
+
+The core API still favors explicit offsets for fixed binary layouts, but fields
+can also resolve their offset, length, or presence from other properties. This
+keeps the current API intact while making packet-style layouts possible in a
+declarative way.
+
+```js
+import { bool, defineStruct, optional, string, u16, u8 } from "@rotu/structview"
+
+class Record extends defineStruct({
+  has_name: bool(0),
+  name_length: u8(1),
+  name: optional(string(2, "name_length"), "has_name"),
+  name_end: {
+    get() {
+      return 2 + (this.has_name ? this.name_length : 0)
+    },
+  },
+  checksum: u16("name_end"),
+}) {}
+```
+
+`optional()` hides a field behind a boolean property or callback, and field
+factories such as `string()`, `u16()`, `substruct()`, and `typedArray()` can
+now resolve offsets and lengths from property names or accessor functions.
+
 # Gotchas and rough edges
 
 1. Resizable structs are not yet implemented. Resizable `Arraybuffer`s only

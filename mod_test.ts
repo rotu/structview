@@ -10,6 +10,7 @@ import {
   i32,
   i64,
   i8,
+  optional,
   string,
   substruct,
   typedArray,
@@ -388,6 +389,54 @@ test("typedArray", () => {
   instance.f32s[2] = 1 / 9
   const f32s2 = new Float32Array([1 / 3, 1 / 6, 1 / 9])
   deepStrictEqual(new Float32Array(buf.buffer.slice(4, 16)), f32s2)
+})
+
+test("optional field can follow a presence property", () => {
+  const buf = new Uint8Array(8)
+  class S extends defineStruct({
+    has_name: bool(0),
+    name_length: u8(1),
+    name: optional(string(2, "name_length"), "has_name"),
+  }) {}
+  const instance = new S(buf)
+
+  instance.name_length = 3
+  deepStrictEqual(instance.name, undefined)
+
+  instance.name = "cat"
+  deepStrictEqual(instance.has_name, true)
+  deepStrictEqual(instance.name, "cat")
+  deepStrictEqual(buf.slice(2, 5), new Uint8Array([99, 97, 116]))
+
+  instance.name = undefined
+  deepStrictEqual(instance.has_name, false)
+  deepStrictEqual(instance.name, undefined)
+})
+
+test("field offsets and lengths can come from other properties", () => {
+  const buf = new Uint8Array(12)
+  class S extends defineStruct({
+    has_name: bool(0),
+    name_length: u8(1),
+    name: optional(string(2, "name_length"), "has_name"),
+    score_offset: {
+      get() {
+        return 2 + (this.has_name ? this.name_length : 0)
+      },
+    },
+    score: u16("score_offset"),
+  }) {}
+  const instance = new S(buf)
+
+  instance.score = 0x1234
+  deepStrictEqual(buf.slice(2, 4), new Uint8Array([0x34, 0x12]))
+
+  instance.name_length = 3
+  instance.name = "cat"
+  instance.score = 0xabcd
+  deepStrictEqual(instance.score_offset, 5)
+  deepStrictEqual(instance.score, 0xabcd)
+  deepStrictEqual(buf.slice(5, 7), new Uint8Array([0xcd, 0xab]))
 })
 
 test("getter-only properties inferred as readonly", () => {

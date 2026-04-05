@@ -5,144 +5,242 @@
 
 import { structBytes, structDataView } from "./core.ts"
 import type {
+  AnyStruct,
   ReadOnlyAccessorDescriptor,
   StructConstructor,
   StructPropertyDescriptor,
   TypedArraySpecies,
 } from "./types.ts"
 
+type ResolvableValue<T> = T | string | ((struct: AnyStruct) => T)
+type BooleanFieldValue = ResolvableValue<boolean>
+type NumberFieldValue = ResolvableValue<number>
+type OptionalNumberFieldValue = ResolvableValue<number | undefined> | undefined
+
+function resolveFieldValue<T>(
+  struct: AnyStruct,
+  value: ResolvableValue<T>,
+): T {
+  if (typeof value === "function") {
+    return value(struct)
+  }
+  if (typeof value === "string") {
+    return Reflect.get(struct, value)
+  }
+  return value
+}
+
+function resolveNumberFieldValue(
+  struct: AnyStruct,
+  value: NumberFieldValue,
+  name: string,
+): number {
+  const result = resolveFieldValue(struct, value)
+  if (typeof result !== "number") {
+    throw new TypeError(`${name} must resolve to a number`)
+  }
+  return result
+}
+
+function resolveOptionalNumberFieldValue(
+  struct: AnyStruct,
+  value: OptionalNumberFieldValue,
+  name: string,
+): number | undefined {
+  if (typeof value === "undefined") {
+    return undefined
+  }
+  const result = resolveFieldValue(struct, value)
+  if (typeof result !== "number" && typeof result !== "undefined") {
+    throw new TypeError(`${name} must resolve to a number or undefined`)
+  }
+  return result
+}
+
+function resolvePositiveIntegerFieldValue(
+  struct: AnyStruct,
+  value: NumberFieldValue,
+  name: string,
+): number {
+  const result = resolveNumberFieldValue(struct, value, name)
+  if (!Number.isInteger(result) || result <= 0) {
+    throw new TypeError(`${name} must resolve to a positive integer`)
+  }
+  return result
+}
+
+function resolveBooleanFieldValue(
+  struct: AnyStruct,
+  value: BooleanFieldValue,
+): boolean {
+  const result = resolveFieldValue(struct, value)
+  if (typeof result !== "boolean") {
+    throw new TypeError(
+      "optional field presence condition must resolve to a boolean",
+    )
+  }
+  return result
+}
+
+function setBooleanFieldValue(
+  struct: AnyStruct,
+  value: string | ((struct: AnyStruct, present: boolean) => void),
+  present: boolean,
+) {
+  if (typeof value === "function") {
+    value(struct, present)
+    return
+  }
+  if (typeof value === "string") {
+    Reflect.set(struct, value, present)
+    return
+  }
+  throw new TypeError(
+    "optional field presence must be settable via a property name or callback",
+  )
+}
+
+function dataViewField<T>(
+  fieldOffset: NumberFieldValue,
+  fieldGetter: (dv: DataView, offset: number) => T,
+  fieldSetter: (dv: DataView, offset: number, value: T) => void,
+): StructPropertyDescriptor<T> {
+  return {
+    get() {
+      const dv = structDataView(this)
+      const offset = resolveNumberFieldValue(this, fieldOffset, "fieldOffset")
+      return fieldGetter(dv, offset)
+    },
+    set(value) {
+      const dv = structDataView(this)
+      const offset = resolveNumberFieldValue(this, fieldOffset, "fieldOffset")
+      fieldSetter(dv, offset, value)
+    },
+  }
+}
+
 /**
  * Field for a 8-bit unsigned integer
  */
-export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getUint8(fieldOffset)
-    },
-    set(value) {
-      structDataView(this).setUint8(fieldOffset, value)
-    },
-  }
+export function u8(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getUint8(offset),
+    (dv, offset, value) => dv.setUint8(offset, value),
+  )
 }
 /**
  * Field for a little-endian 16-bit unsigned integer
  */
-export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getUint16(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setUint16(fieldOffset, value, true)
-    },
-  }
+export function u16(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getUint16(offset, true),
+    (dv, offset, value) => dv.setUint16(offset, value, true),
+  )
 }
 /**
  * Field for a little-endian 32-bit unsigned integer
  */
-export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getUint32(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setUint32(fieldOffset, value, true)
-    },
-  }
+export function u32(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getUint32(offset, true),
+    (dv, offset, value) => dv.setUint32(offset, value, true),
+  )
 }
 /**
  * Field for a little-endian 64-bit unsigned integer
  */
-export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
-  return {
-    get() {
-      return structDataView(this).getBigUint64(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setBigUint64(fieldOffset, value, true)
-    },
-  }
+export function u64(fieldOffset: NumberFieldValue): StructPropertyDescriptor<bigint> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getBigUint64(offset, true),
+    (dv, offset, value) => dv.setBigUint64(offset, value, true),
+  )
 }
 /**
  * Field for a little-endian 8-bit signed integer
  */
-export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getInt8(fieldOffset)
-    },
-    set(value) {
-      structDataView(this).setInt8(fieldOffset, value)
-    },
-  }
+export function i8(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getInt8(offset),
+    (dv, offset, value) => dv.setInt8(offset, value),
+  )
 }
 /**
  * Field for a little-endian 16-bit signed integer
  */
-export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getInt16(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setInt16(fieldOffset, value, true)
-    },
-  }
+export function i16(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getInt16(offset, true),
+    (dv, offset, value) => dv.setInt16(offset, value, true),
+  )
 }
 /**
  * Field for a little-endian 32-bit signed integer
  */
-export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getInt32(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setInt32(fieldOffset, value, true)
-    },
-  }
+export function i32(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getInt32(offset, true),
+    (dv, offset, value) => dv.setInt32(offset, value, true),
+  )
 }
 /**
  * Field for a little-endian 64-bit signed integer
  */
-export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
-  return {
-    get() {
-      return structDataView(this).getBigInt64(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setBigInt64(fieldOffset, value, true)
-    },
-  }
+export function i64(fieldOffset: NumberFieldValue): StructPropertyDescriptor<bigint> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getBigInt64(offset, true),
+    (dv, offset, value) => dv.setBigInt64(offset, value, true),
+  )
 }
 
 /**
  * Field for a little-endian unsigned integer of arbitrary byte length
  */
 export function biguintle(
-  fieldOffset: number,
-  { byteLength }: { byteLength: number },
+  fieldOffset: NumberFieldValue,
+  { byteLength }: { byteLength: NumberFieldValue },
 ): StructPropertyDescriptor<bigint> {
-  if (
-    !Number.isInteger(byteLength) ||
-    !(0 < byteLength)
-  ) {
-    throw new TypeError("byteLength must be a positive integer")
-  }
   return {
     get() {
+      const resolvedFieldOffset = resolveNumberFieldValue(
+        this,
+        fieldOffset,
+        "fieldOffset",
+      )
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
+        this,
+        byteLength,
+        "byteLength",
+      )
       let result = 0n
       const dv = structDataView(this)
-      for (let i = 0; i < byteLength; ++i) {
-        result |= BigInt(dv.getUint8(fieldOffset + i)) << BigInt(8 * i)
+      for (let i = 0; i < resolvedByteLength; ++i) {
+        result |= BigInt(dv.getUint8(resolvedFieldOffset + i)) << BigInt(8 * i)
       }
       return result
     },
     set(value) {
+      const resolvedFieldOffset = resolveNumberFieldValue(
+        this,
+        fieldOffset,
+        "fieldOffset",
+      )
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
+        this,
+        byteLength,
+        "byteLength",
+      )
       const dv = structDataView(this)
-      for (let i = 0; i < byteLength; ++i) {
+      for (let i = 0; i < resolvedByteLength; ++i) {
         dv.setUint8(
-          fieldOffset + i,
+          resolvedFieldOffset + i,
           Number((value >> BigInt(8 * i)) & 0xffn),
         )
       }
@@ -154,24 +252,36 @@ export function biguintle(
  * Field for a little-endian signed integer of arbitrary byte length
  */
 export function bigintle(
-  offset: number,
-  options: { byteLength: number },
+  offset: NumberFieldValue,
+  options: { byteLength: NumberFieldValue },
 ): StructPropertyDescriptor<bigint> {
   const { byteLength } = options
   return {
     get() {
+      const resolvedOffset = resolveNumberFieldValue(this, offset, "fieldOffset")
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
+        this,
+        byteLength,
+        "byteLength",
+      )
       let result = 0n
       const dv = structDataView(this)
-      for (let i = 0; i < byteLength; ++i) {
-        result |= BigInt(dv.getUint8(offset + i)) << BigInt(8 * i)
+      for (let i = 0; i < resolvedByteLength; ++i) {
+        result |= BigInt(dv.getUint8(resolvedOffset + i)) << BigInt(8 * i)
       }
-      return BigInt.asIntN(byteLength * 8, result)
+      return BigInt.asIntN(resolvedByteLength * 8, result)
     },
     set(value) {
+      const resolvedOffset = resolveNumberFieldValue(this, offset, "fieldOffset")
+      const resolvedByteLength = resolvePositiveIntegerFieldValue(
+        this,
+        byteLength,
+        "byteLength",
+      )
       const dv = structDataView(this)
-      for (let i = 0; i < byteLength; ++i) {
+      for (let i = 0; i < resolvedByteLength; ++i) {
         dv.setUint8(
-          offset + i,
+          resolvedOffset + i,
           Number((value >> BigInt(8 * i)) & 0xffn),
         )
       }
@@ -182,73 +292,88 @@ export function bigintle(
 /**
  * Field for a little-endian 16-bit binary float (float16_t)
  */
-export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
+export function f16(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
   if (
     typeof DataView.prototype.getFloat16 !== "function" ||
     typeof DataView.prototype.setFloat16 !== "function"
   ) {
     throw new TypeError("float16 is not supported in this environment")
   }
-  return {
-    get() {
-      return structDataView(this).getFloat16(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setFloat16(fieldOffset, value, true)
-    },
-  }
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getFloat16(offset, true),
+    (dv, offset, value) => dv.setFloat16(offset, value, true),
+  )
 }
 
 /**
  * Field for a little-endian 32-bit binary float (float32_t)
  */
-export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getFloat32(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setFloat32(fieldOffset, value, true)
-    },
-  }
+export function f32(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getFloat32(offset, true),
+    (dv, offset, value) => dv.setFloat32(offset, value, true),
+  )
 }
 
 /**
  * Field for a little-endian 64-bit binary float (float64_t)
  */
-export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getFloat64(fieldOffset, true)
-    },
-    set(value) {
-      structDataView(this).setFloat64(fieldOffset, value, true)
-    },
-  }
+export function f64(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getFloat64(offset, true),
+    (dv, offset, value) => dv.setFloat64(offset, value, true),
+  )
 }
 
 /**
  * Field for a UTF-8 fixed-length string
  */
 export function string(
-  fieldOffset: number,
-  byteLength: number,
+  fieldOffset: NumberFieldValue,
+  byteLength: NumberFieldValue,
 ): StructPropertyDescriptor<string> {
   const TEXT_DECODER = new TextDecoder()
   const TEXT_ENCODER = new TextEncoder()
   return {
     get() {
+      const resolvedFieldOffset = resolveNumberFieldValue(
+        this,
+        fieldOffset,
+        "fieldOffset",
+      )
+      const resolvedByteLength = resolveNumberFieldValue(
+        this,
+        byteLength,
+        "byteLength",
+      )
       const str = TEXT_DECODER.decode(
-        structBytes(this, fieldOffset, fieldOffset + byteLength),
+        structBytes(
+          this,
+          resolvedFieldOffset,
+          resolvedFieldOffset + resolvedByteLength,
+        ),
       )
       // trim all trailing null characters
       return str.replace(/\0+$/, "")
     },
     set(value) {
-      const bytes = structBytes(
+      const resolvedFieldOffset = resolveNumberFieldValue(
         this,
         fieldOffset,
-        fieldOffset + byteLength,
+        "fieldOffset",
+      )
+      const resolvedByteLength = resolveNumberFieldValue(
+        this,
+        byteLength,
+        "byteLength",
+      )
+      const bytes = structBytes(
+        this,
+        resolvedFieldOffset,
+        resolvedFieldOffset + resolvedByteLength,
       )
       bytes.fill(0)
       TEXT_ENCODER.encodeInto(value, bytes)
@@ -260,15 +385,77 @@ export function string(
  * Field for a boolean stored in a byte (0 = false, nonzero = true)
  * True will be stored as 1
  */
-export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
-  return {
-    get() {
-      return Boolean(structDataView(this).getUint8(fieldOffset))
+export function bool(fieldOffset: NumberFieldValue): StructPropertyDescriptor<boolean> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => Boolean(dv.getUint8(offset)),
+    (dv, offset, value) => dv.setUint8(offset, value ? 1 : 0),
+  )
+}
+
+export function optional<T>(
+  field: StructPropertyDescriptor<T> & { get(): T; set?: undefined },
+  present:
+    | BooleanFieldValue
+    | {
+      present: BooleanFieldValue
+      setPresent?: string | ((struct: AnyStruct, present: boolean) => void)
     },
-    set(value) {
-      structDataView(this).setUint8(fieldOffset, value ? 1 : 0)
+): StructPropertyDescriptor<T | undefined> & ReadOnlyAccessorDescriptor<T | undefined>
+export function optional<T>(
+  field: StructPropertyDescriptor<T>,
+  present:
+    | BooleanFieldValue
+    | {
+      present: BooleanFieldValue
+      setPresent?: string | ((struct: AnyStruct, present: boolean) => void)
+    },
+): StructPropertyDescriptor<T | undefined>
+export function optional<T>(
+  field: StructPropertyDescriptor<T>,
+  present:
+    | BooleanFieldValue
+    | {
+      present: BooleanFieldValue
+      setPresent?: string | ((struct: AnyStruct, present: boolean) => void)
+    },
+): StructPropertyDescriptor<T | undefined> {
+  const getter = field.get
+  if (typeof getter !== "function") {
+    throw new TypeError(
+      "optional() requires a field descriptor with a defined 'get' method",
+    )
+  }
+  const presenceConfig = typeof present === "object"
+    ? present
+    : { present, setPresent: present }
+  const descriptor: StructPropertyDescriptor<T | undefined> = {
+    get() {
+      if (!resolveBooleanFieldValue(this, presenceConfig.present)) {
+        return undefined
+      }
+      return getter.call(this)
     },
   }
+  if (typeof field.set === "function") {
+    descriptor.set = function (value) {
+      if (typeof value === "undefined") {
+        setBooleanFieldValue(
+          this,
+          presenceConfig.setPresent ?? presenceConfig.present,
+          false,
+        )
+        return
+      }
+      field.set?.call(this, value)
+      setBooleanFieldValue(
+        this,
+        presenceConfig.setPresent ?? presenceConfig.present,
+        true,
+      )
+    }
+  }
+  return descriptor
 }
 
 /**
@@ -321,20 +508,31 @@ export function substruct<
   T extends object,
 >(
   ctor: StructConstructor<T>,
-  byteOffset?: number,
-  bytelength?: number,
+  byteOffset?: NumberFieldValue,
+  bytelength?: OptionalNumberFieldValue,
 ): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
-  return fromDataView(
-    (dv) => {
-      const offset2 = dv.byteOffset + (byteOffset ?? 0)
-      const bytelength2 = bytelength ?? (dv.byteLength - (byteOffset ?? 0))
+  return {
+    get() {
+      const dv = structDataView(this)
+      const resolvedByteOffset = resolveOptionalNumberFieldValue(
+        this,
+        byteOffset,
+        "byteOffset",
+      ) ?? 0
+      const resolvedByteLength = resolveOptionalNumberFieldValue(
+        this,
+        bytelength,
+        "byteLength",
+      ) ?? (dv.byteLength - resolvedByteOffset)
+      const offset2 = dv.byteOffset + resolvedByteOffset
+      const bytelength2 = resolvedByteLength
       return Reflect.construct(ctor, [{
         buffer: dv.buffer,
         byteOffset: offset2,
         byteLength: bytelength2,
       }])
     },
-  )
+  }
 }
 
 /**
@@ -349,10 +547,10 @@ export function substruct<
  * @param fieldOffset  where the array starts relative to the parent struct
  */
 export function typedArray<T>(
-  fieldOffset: number,
+  fieldOffset: NumberFieldValue,
   kwargs: {
     /** length or property name for the length of the array */
-    readonly length: number | string | undefined
+    readonly length: OptionalNumberFieldValue
     /** TypedArray constructor */
     readonly species: TypedArraySpecies<T>
   },
@@ -361,19 +559,27 @@ export function typedArray<T>(
   return {
     get() {
       const dv = structDataView(this)
+      const resolvedFieldOffset = resolveNumberFieldValue(
+        this,
+        fieldOffset,
+        "fieldOffset",
+      )
       let lengthValue: number | undefined
-      if (typeof length === "undefined") {
+      const resolvedLength = resolveOptionalNumberFieldValue(
+        this,
+        length,
+        "length",
+      )
+      if (typeof resolvedLength === "undefined") {
         lengthValue = Math.floor(
-          (dv.byteLength - fieldOffset) / species.BYTES_PER_ELEMENT,
+          (dv.byteLength - resolvedFieldOffset) / species.BYTES_PER_ELEMENT,
         )
-      } else if (typeof length === "number") {
-        lengthValue = length
-      } else if (typeof length === "string") {
-        lengthValue = Reflect.get(this, length)
+      } else {
+        lengthValue = resolvedLength
       }
       return new species(
         dv.buffer,
-        dv.byteOffset + fieldOffset,
+        dv.byteOffset + resolvedFieldOffset,
         lengthValue,
       )
     },
@@ -383,126 +589,99 @@ export function typedArray<T>(
 /**
  * Field for a big-endian 16-bit unsigned integer
  */
-export function u16be(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getUint16(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setUint16(fieldOffset, value, false)
-    },
-  }
+export function u16be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getUint16(offset, false),
+    (dv, offset, value) => dv.setUint16(offset, value, false),
+  )
 }
 /**
  * Field for a big-endian 32-bit unsigned integer
  */
-export function u32be(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getUint32(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setUint32(fieldOffset, value, false)
-    },
-  }
+export function u32be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getUint32(offset, false),
+    (dv, offset, value) => dv.setUint32(offset, value, false),
+  )
 }
 /**
  * Field for a big-endian 64-bit unsigned integer
  */
-export function u64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
-  return {
-    get() {
-      return structDataView(this).getBigUint64(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setBigUint64(fieldOffset, value, false)
-    },
-  }
+export function u64be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<bigint> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getBigUint64(offset, false),
+    (dv, offset, value) => dv.setBigUint64(offset, value, false),
+  )
 }
 /**
  * Field for a big-endian 16-bit signed integer
  */
-export function i16be(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getInt16(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setInt16(fieldOffset, value, false)
-    },
-  }
+export function i16be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getInt16(offset, false),
+    (dv, offset, value) => dv.setInt16(offset, value, false),
+  )
 }
 /**
  * Field for a big-endian 32-bit signed integer
  */
-export function i32be(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getInt32(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setInt32(fieldOffset, value, false)
-    },
-  }
+export function i32be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getInt32(offset, false),
+    (dv, offset, value) => dv.setInt32(offset, value, false),
+  )
 }
 /**
  * Field for a big-endian 64-bit signed integer
  */
-export function i64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
-  return {
-    get() {
-      return structDataView(this).getBigInt64(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setBigInt64(fieldOffset, value, false)
-    },
-  }
+export function i64be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<bigint> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getBigInt64(offset, false),
+    (dv, offset, value) => dv.setBigInt64(offset, value, false),
+  )
 }
 
 /**
  * Field for a big-endian 16-bit binary float (float16_t)
  */
-export function f16be(fieldOffset: number): StructPropertyDescriptor<number> {
+export function f16be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
   if (
     typeof DataView.prototype.getFloat16 !== "function" ||
     typeof DataView.prototype.setFloat16 !== "function"
   ) {
     throw new TypeError("float16 is not supported in this environment")
   }
-  return {
-    get() {
-      return structDataView(this).getFloat16(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setFloat16(fieldOffset, value, false)
-    },
-  }
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getFloat16(offset, false),
+    (dv, offset, value) => dv.setFloat16(offset, value, false),
+  )
 }
 
 /**
  * Field for a big-endian 32-bit binary float (float32_t)
  */
-export function f32be(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getFloat32(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setFloat32(fieldOffset, value, false)
-    },
-  }
+export function f32be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getFloat32(offset, false),
+    (dv, offset, value) => dv.setFloat32(offset, value, false),
+  )
 }
 
 /**
  * Field for a big-endian 64-bit binary float (float64_t)
  */
-export function f64be(fieldOffset: number): StructPropertyDescriptor<number> {
-  return {
-    get() {
-      return structDataView(this).getFloat64(fieldOffset, false)
-    },
-    set(value) {
-      structDataView(this).setFloat64(fieldOffset, value, false)
-    },
-  }
+export function f64be(fieldOffset: NumberFieldValue): StructPropertyDescriptor<number> {
+  return dataViewField(
+    fieldOffset,
+    (dv, offset) => dv.getFloat64(offset, false),
+    (dv, offset, value) => dv.setFloat64(offset, value, false),
+  )
 }
