@@ -3,7 +3,15 @@ import process from "node:process"
 import denoJsonData from "../deno.json" with { type: "json" }
 import packageJsonData from "../package.json" with { type: "json" }
 
-type PackageExportMap = Record<string, string>
+interface PackageConditionalExport {
+  deno?: string
+  default?: string
+  [key: string]: unknown
+}
+
+type PackageExportTarget = string | PackageConditionalExport
+type PackageExportMap = Record<string, PackageExportTarget>
+type DenoExportMap = Record<string, string>
 
 interface PackageJson {
   name?: string
@@ -17,7 +25,7 @@ interface DenoJson {
   name?: string
   version?: string
   license?: string
-  exports?: PackageExportMap
+  exports?: DenoExportMap
   publish?: {
     include?: string[]
     exclude?: string[]
@@ -79,18 +87,30 @@ function requireString(value: string | undefined, label: string): string {
 
 function deriveDenoExports(
   packageExports: PackageExportMap | undefined,
-): PackageExportMap {
+): DenoExportMap {
   if (!packageExports) {
     throw new Error("package.json must define an exports object")
   }
 
   const denoExports = Object.fromEntries(
-    Object.entries(packageExports).filter(([subpath, target]) => {
-      if (typeof target !== "string") {
-        throw new Error(`Unsupported package export target for ${subpath}`)
+    Object.entries(packageExports).filter(([subpath]) => {
+      return subpath !== "./package.json"
+    }).map(([subpath, target]) => {
+      if (typeof target === "string") {
+        return [subpath, target]
       }
 
-      return subpath !== "./package.json"
+      if (typeof target.deno === "string") {
+        return [subpath, target.deno]
+      }
+
+      if (typeof target.default !== "string") {
+        throw new Error(
+          `package.json export ${subpath} must provide a string deno or default target`,
+        )
+      }
+
+      return [subpath, target.default]
     }),
   )
 

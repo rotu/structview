@@ -1,9 +1,9 @@
 {
   "name": "@rotu/structview",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "license": "MIT",
   "tasks": {
-    "validate": "deno run -A scripts/sync-package-metadata.ts --check && deno fmt --check && deno lint && deno x vitest run && deno publish --dry-run --allow-dirty && npm pack --dry-run"
+    "validate": "deno run -A scripts/sync-package-metadata.ts --check && deno fmt --check && deno lint && deno x vitest run && deno publish --dry-run --allow-dirty && npm pack --dry-run && npm run smoke:npm"
   },
   "fmt": {
     "semiColons": false
@@ -12,6 +12,7 @@
   "publish": {
     "include": [
       "deno.json",
+      "dist",
       "bigendian.ts",
       "core.ts",
       "fields.ts",

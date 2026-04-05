@@ -1,6 +1,6 @@
 {
   "name": "@rotu/structview",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "description": "Read and write structured binary data with typesafe views",
   "license": "MIT",
   "type": "module",
@@ -8,13 +8,24 @@
     "type": "git",
     "url": "https://github.com/rotu/structview"
   },
+  "scripts": {
+    "test": "vitest run && npm run smoke:npm",
+    "prepack": "rm -rf dist && tsc -p tsconfig.json",
+    "smoke:npm": "node scripts/smoke-test-npm-package.mjs"
+  },
   "exports": {
-    ".": "./mod.ts",
-    "./bigendian": "./bigendian.ts",
+    ".": {
+      "node": "./dist/mod.js",
+      "default": "./mod.ts"
+    },
+    "./bigendian": {
+      "node": "./dist/bigendian.js",
+      "default": "./bigendian.ts"
+    },
     "./package.json": "./package.json"
   },
-  "types": "./mod.ts",
   "files": [
+    "dist",
     "bigendian.ts",
     "core.ts",
     "fields.ts",
@@ -27,6 +38,7 @@
     "node": ">=22"
   },
   "devDependencies": {
+    "typescript": "^5.9.3",
     "vitest": "^4.1.2"
   }
 }

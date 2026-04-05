@@ -21,8 +21,8 @@ Run these after changing package metadata or CI/package validation behavior.
 
 1. `deno run -A scripts/sync-package-metadata.ts`: rewrite `deno.json` from
    `package.json` metadata.
-2. `deno task validate`: verify formatting, lint, tests, JSR dry-run, and npm
-   pack dry-run.
+2. `deno task validate`: verify formatting, lint, tests, JSR dry-run, npm pack
+   dry-run, and a Node install/import smoke test.
 3. `npm install --no-package-lock --ignore-scripts`: refresh local dev
    dependencies without introducing a lockfile. This is required before local
    `deno task validate`, `npm x vitest run`, and `bun x vitest run` commands.
@@ -33,12 +33,16 @@ Operational commands are documented here so `deno.json` only carries the main
 aggregate validation entrypoint.
 
 1. `deno task validate`: verify metadata sync, format, lint, tests, JSR dry-run,
-   and npm pack dry-run.
+   npm pack dry-run, and the Node smoke test.
 2. `deno x vitest run`: run the Vitest suite through Deno.
-3. `npm x vitest run`: run the Vitest suite in Node.
-4. `bun x vitest run`: run the Vitest suite in Bun.
-5. `deno x vitest bench --run`: run the Vitest benchmark suite.
-6. `act -W .github/workflows/ci.yml`: run the CI workflow locally when `act` is
+3. `npm test`: run the Node-side Vitest suite and the npm install/import smoke
+   test.
+4. `npm x vitest run`: run the Vitest suite in Node.
+5. `bun x vitest run`: run the Vitest suite in Bun.
+6. `npm run smoke:npm`: pack the current tree, install it into a temporary Node
+   project, and verify the installed package imports successfully.
+7. `deno x vitest bench --run`: run the Vitest benchmark suite.
+8. `act -W .github/workflows/ci.yml`: run the CI workflow locally when `act` is
    installed.
 
 ## Releases

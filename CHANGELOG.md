@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.2 — 2026-04-05
+
+- Fix npm package imports under Node by shipping JavaScript entrypoints instead
+  of relying on TypeScript-only package resolution from `node_modules`.
+
 ## 0.16.1 — 2026-04-02
 
 - Align release publishing so npm and JSR stay version-synchronized.

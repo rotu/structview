@@ -82,6 +82,9 @@ jobs:
       - name: Validate npm package contents
         run: npm pack --dry-run
 
+      - name: Run npm tests
+        run: npm test
+
       - if: env.RELEASE_PUBLISH != 'true'
         name: Run publish dry-runs
         run: |
