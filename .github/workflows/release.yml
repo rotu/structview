@@ -51,6 +51,9 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Install npm dev dependencies
+        run: npm install --no-package-lock --ignore-scripts
+
       - name: Resolve release version
         id: version
         run: deno run -A scripts/release-helper.ts resolve >> "$GITHUB_OUTPUT"
