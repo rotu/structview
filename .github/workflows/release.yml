@@ -132,13 +132,13 @@ jobs:
           git add package.json deno.json
 
           if git diff --cached --quiet; then
-            echo "::error::No version changes to commit"
-            exit 1
+            echo "No version changes to commit; tagging current HEAD"
+          else
+            git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+            git push origin HEAD
           fi
 
-          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
           git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
-          git push origin HEAD
           git push origin "${{ steps.version.outputs.tag }}"
 
       - if: env.RELEASE_PUBLISH == 'true'
