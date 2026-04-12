@@ -550,7 +550,6 @@ test("bytes variable-length (no byteLength)", () => {
   })
 })
 
-
 function hexToUint8Array(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) {
     throw new TypeError("Hex input must have an even length")
