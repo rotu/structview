@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.17.0 — 2026-04-12
+## 0.17.0-pre — 2026-04-12
 
 - Add variable-length `string` field: `byteLength` is now optional and defaults
   to the end of the struct's buffer.
