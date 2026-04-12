@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.0 — 2026-04-12
+
+- Add variable-length `string` field: `byteLength` is now optional and defaults
+  to the end of the struct's buffer.
+- Add `bytes` field: returns a live `Uint8Array` view into the struct's buffer,
+  with optional fixed or variable length.
+
 ## 0.16.2 — 2026-04-05
 
 - Fix npm package imports under Node by shipping JavaScript entrypoints instead
