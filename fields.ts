@@ -228,30 +228,55 @@ export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
 }
 
 /**
- * Field for a UTF-8 fixed-length string
+ * Field for a UTF-8 string. When `byteLength` is provided, covers exactly that
+ * many bytes starting at `fieldOffset`. When omitted, extends from `fieldOffset`
+ * to the end of the struct's buffer (variable-length).
  */
 export function string(
   fieldOffset: number,
-  byteLength: number,
+  byteLength?: number,
 ): StructPropertyDescriptor<string> {
   const TEXT_DECODER = new TextDecoder()
   const TEXT_ENCODER = new TextEncoder()
   return {
     get() {
+      const end = byteLength !== undefined
+        ? fieldOffset + byteLength
+        : undefined
       const str = TEXT_DECODER.decode(
-        structBytes(this, fieldOffset, fieldOffset + byteLength),
+        structBytes(this, fieldOffset, end),
       )
       // trim all trailing null characters
       return str.replace(/\0+$/, "")
     },
     set(value) {
-      const bytes = structBytes(
-        this,
-        fieldOffset,
-        fieldOffset + byteLength,
-      )
+      const end = byteLength !== undefined
+        ? fieldOffset + byteLength
+        : undefined
+      const bytes = structBytes(this, fieldOffset, end)
       bytes.fill(0)
       TEXT_ENCODER.encodeInto(value, bytes)
+    },
+  }
+}
+
+/**
+ * Field for a live `Uint8Array` view into the struct's buffer. When
+ * `byteLength` is provided, covers exactly that many bytes starting at
+ * `fieldOffset`. When omitted, extends from `fieldOffset` to the end of the
+ * struct's buffer (variable-length). The field is read-only; mutations happen
+ * through the returned `Uint8Array` directly.
+ */
+export function bytes(
+  fieldOffset: number,
+  byteLength?: number,
+): StructPropertyDescriptor<Uint8Array> & ReadOnlyAccessorDescriptor<Uint8Array> {
+  return {
+    get() {
+      const end = byteLength !== undefined
+        ? fieldOffset + byteLength
+        : undefined
+      return structBytes(this, fieldOffset, end)
     },
   }
 }

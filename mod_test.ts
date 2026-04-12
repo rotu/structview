@@ -2,6 +2,7 @@ import {
   bigintle,
   biguintle,
   bool,
+  bytes,
   f16,
   f32,
   f64,
@@ -487,6 +488,68 @@ test("fromDataView with setter is writable and enumerable", () => {
   }
   assert(keys.includes("val"))
 })
+
+test("string variable-length (no byteLength)", () => {
+  // 4 bytes prefix + 6 bytes for variable-length string
+  const Cls = defineStruct({
+    prefix: u32(0),
+    name: string(4),
+  })
+  const c = new Cls(new Uint8Array(10))
+  deepStrictEqual(c.name, "")
+  c.name = "hello!"
+  deepStrictEqual(c.name, "hello!")
+  // trailing nulls are trimmed
+  c.name = "hi"
+  deepStrictEqual(c.name, "hi")
+  // prefix field is unaffected
+  c.prefix = 0xdeadbeef
+  deepStrictEqual(c.prefix, 0xdeadbeef)
+  deepStrictEqual(c.name, "hi")
+})
+
+test("bytes fixed-length", () => {
+  const buf = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7])
+  const Cls = defineStruct({
+    data: bytes(2, 4),
+  })
+  const c = new Cls(buf)
+  expect(c.data).toBeInstanceOf(Uint8Array)
+  deepStrictEqual(c.data.length, 4)
+  // is a live view of the same underlying buffer
+  strictEqual(c.data.buffer, buf.buffer)
+  deepStrictEqual(c.data.byteOffset, 2)
+  // mutations through the Uint8Array are reflected in buf
+  c.data[0] = 0xff
+  deepStrictEqual(buf[2], 0xff)
+  // is read-only (no setter)
+  throws(() => {
+    // @ts-expect-error assigning to readonly property
+    c.data = new Uint8Array(4)
+  })
+})
+
+test("bytes variable-length (no byteLength)", () => {
+  const buf = new Uint8Array([10, 20, 30, 40, 50])
+  const Cls = defineStruct({
+    data: bytes(2),
+  })
+  const c = new Cls(buf)
+  expect(c.data).toBeInstanceOf(Uint8Array)
+  // extends from offset 2 to end of struct
+  deepStrictEqual(c.data.length, 3)
+  strictEqual(c.data.buffer, buf.buffer)
+  deepStrictEqual(c.data.byteOffset, 2)
+  // mutations through the Uint8Array are reflected in buf
+  c.data[1] = 0xab
+  deepStrictEqual(buf[3], 0xab)
+  // is read-only (no setter)
+  throws(() => {
+    // @ts-expect-error assigning to readonly property
+    c.data = new Uint8Array(3)
+  })
+})
+
 
 function hexToUint8Array(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) {
