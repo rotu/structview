@@ -270,7 +270,9 @@ export function string(
 export function bytes(
   fieldOffset: number,
   byteLength?: number,
-): StructPropertyDescriptor<Uint8Array> & ReadOnlyAccessorDescriptor<Uint8Array> {
+):
+  & StructPropertyDescriptor<Uint8Array>
+  & ReadOnlyAccessorDescriptor<Uint8Array> {
   return {
     get() {
       const end = byteLength !== undefined
