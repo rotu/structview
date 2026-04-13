@@ -20,18 +20,18 @@ Run these after changing package metadata or CI/package validation behavior.
 
 1. `vp run jsr:sync`: rewrite `jsr.json` from `package.json` metadata.
 2. `vp run validate`: verify metadata sync, Vite+ static checks, Node-side tests, and the JSR dry-run.
-3. `vp install --ignore-scripts`: refresh local dev dependencies from the current lockfile. This is required before local `vp run validate`, `vp test run`, `npm test`, and `bun run test` commands.
+3. `vp install --ignore-scripts`: refresh local dev dependencies from the current lockfile. This is required before local `vp run validate`, `vitest run`, `npm test`, `npm run test:node`, `bun run test`, and `npm run test:workers` commands.
 
 ## Commands
-
-Operational commands are documented here so Vite+ remains the canonical command surface: `vite.config.ts` carries the custom task entrypoints, and `package.json` only keeps lifecycle hooks.
 
 1. `vp run validate`: verify metadata sync, Vite+ static checks, tests, and the JSR dry-run.
 2. `vp run build`: emit the npm `dist/` JavaScript files with `vp pack` while preserving the source module layout.
 3. `vp run check`: verify synced metadata, formatting, and type-aware linting.
-4. `vp test run`, `npm test`, and `bun run test`: run the test suite via the canonical Vite+ command, the Node wrapper, and the Bun wrapper.
-5. `vp run bench`: run the Vitest benchmark suite.
-6. `act -W .github/workflows/ci.yml`: run the CI workflow locally when `act` is installed.
+4. `vitest run`, `npm test`, and `npm run test:node`: run the Node-hosted test suite via the canonical Vitest CLI or package scripts.
+5. `vitest bench --run` and `vp run bench`: run the Vitest benchmark suite directly or through the repo task.
+6. `bun run test`, `npm run test:bun`, `deno x vp run test`, and `npm run test:deno`: run the test suite through Bun or Deno package-script entrypoints.
+7. `npm run test:workers` and `vitest run --config ./vitest.workers.config.ts`: run the test suite inside the Cloudflare Workers runtime via the Workers Vitest pool.
+8. `act -W .github/workflows/ci.yml`: run the CI workflow locally when `act` is installed.
 
 ## Releases
 
@@ -45,4 +45,4 @@ Releases are prepared locally and published from CI on tag push.
 
 ## Tooling
 
-`vite.config.ts` is the single source of truth for Vite+, lint, format, staged, and pack configuration.
+`vite.config.ts` is the single source of truth for Vite+ run tasks, staged hooks, and pack configuration. `.oxlintrc.json` and `.oxfmtrc.json` own the standalone Oxc lint and format settings.

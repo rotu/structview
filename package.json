@@ -31,19 +31,26 @@
   },
   "scripts": {
     "prepack": "vp run build",
-    "test": "vp test run"
+    "test": "vitest run",
+    "test:bun": "bun run ./node_modules/vitest/vitest.mjs run",
+    "test:deno": "deno run -A ./node_modules/vitest/vitest.mjs run",
+    "test:node": "node ./node_modules/vitest/vitest.mjs run",
+    "test:workers": "node ./node_modules/vitest/vitest.mjs run --config ./vitest.workers.config.ts"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.14.3",
     "@types/node": "*",
     "jsr": "*",
-    "vite-plus": "*"
+    "vite-plus": "*",
+    "vitest": "^4.1.4"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest"
   },
   "engines": {
-    "node": ">=22.18.0"
-  },
-  "packageManager": "npm@11.12.1"
+    "bun": ">=1",
+    "deno": ">=2",
+    "node": ">=22.18.0",
+    "workerd": ">=1.20260409.1"
+  }
 }

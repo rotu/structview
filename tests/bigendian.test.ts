@@ -17,7 +17,7 @@ import {
   u64,
   u64be,
 } from "@rotu/structview"
-import { expect, test } from "vite-plus/test"
+import { expect, test } from "vitest"
 
 test("integers", () => {
   const buf = new Uint8Array(16)

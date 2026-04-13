@@ -1,0 +1,15 @@
+{
+  "ignorePatterns": ["dist", "jsr.json", "node_modules"],
+  "overrides": [
+    {
+      "files": ["**/*.jsonc", "**/*.json"],
+      "options": {
+        "trailingComma": "none"
+      }
+    }
+  ],
+  "semi": false,
+  "sortPackageJson": true,
+  "jsdoc": true,
+  "proseWrap": "never"
+}

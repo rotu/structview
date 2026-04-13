@@ -1,0 +1,5 @@
+{
+  "name": "structview-test-worker",
+  "main": "./entry.ts",
+  "compatibility_date": "2026-04-12"
+}

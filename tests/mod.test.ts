@@ -25,7 +25,7 @@ import {
   u64,
   u8,
 } from "@rotu/structview"
-import { expect, test } from "vite-plus/test"
+import { expect, test } from "vitest"
 
 class vec3_t extends defineStruct({ 0: f32(0), 1: f32(4), 2: f32(8) }) {
   get length() {

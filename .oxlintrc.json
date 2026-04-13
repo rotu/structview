@@ -1,0 +1,28 @@
+{
+  "ignorePatterns": ["dist", "node_modules"],
+  "options": {
+    "typeAware": true,
+    "typeCheck": true,
+    "denyWarnings": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "rules": {
+    "import/no-relative-parent-imports": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts"],
+      "env": {
+        "node": true
+      },
+      "plugins": ["typescript", "unicorn", "oxc", "import", "vitest"]
+    },
+    {
+      "files": ["scripts/**/*.ts"],
+      "env": {
+        "node": true
+      }
+    }
+  ]
+}

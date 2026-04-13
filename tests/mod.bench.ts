@@ -3,7 +3,7 @@
  *   this is to make sure we're not doing anything _eggregiously slow_
  */
 
-import { bench, describe, expect } from "vite-plus/test"
+import { bench, describe, expect } from "vitest"
 
 import { defineStruct, f32, f64, string, u16, u32, u8 } from "@rotu/structview"
 
