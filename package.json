@@ -3,42 +3,47 @@
   "version": "0.17.0-pre",
   "description": "Read and write structured binary data with typesafe views",
   "license": "MIT",
-  "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rotu/structview"
+    "url": "git+https://github.com/rotu/structview.git"
   },
-  "scripts": {
-    "test": "vitest run && npm run smoke:npm",
-    "prepack": "rm -rf dist && tsc -p tsconfig.json",
-    "smoke:npm": "node scripts/smoke-test-npm-package.mjs"
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
+  "imports": {
+    "#package-json": "./package.json",
+    "#src/*": "./src/*"
   },
   "exports": {
     ".": {
       "node": "./dist/mod.js",
-      "default": "./mod.ts"
+      "default": "./src/mod.ts"
     },
     "./bigendian": {
       "node": "./dist/bigendian.js",
-      "default": "./bigendian.ts"
+      "default": "./src/bigendian.ts"
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist",
-    "bigendian.ts",
-    "core.ts",
-    "fields.ts",
-    "mod.ts",
-    "types.ts",
-    "README.md",
-    "CHANGELOG.md"
-  ],
-  "engines": {
-    "node": ">=22"
+  "scripts": {
+    "prepack": "vp run build",
+    "test": "vp test run"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.2"
-  }
+    "@types/node": "*",
+    "jsr": "*",
+    "vite-plus": "*"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "packageManager": "npm@11.12.1"
 }

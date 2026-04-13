@@ -2,15 +2,12 @@
 
 ## 0.17.0-pre — 2026-04-12
 
-- Add variable-length `string` field: `byteLength` is now optional and defaults
-  to the end of the struct's buffer.
-- Add `bytes` field: returns a live `Uint8Array` view into the struct's buffer,
-  with optional fixed or variable length.
+- Add variable-length `string` field: `byteLength` is now optional and defaults to the end of the struct's buffer.
+- Add `bytes` field: returns a live `Uint8Array` view into the struct's buffer, with optional fixed or variable length.
 
 ## 0.16.2 — 2026-04-05
 
-- Fix npm package imports under Node by shipping JavaScript entrypoints instead
-  of relying on TypeScript-only package resolution from `node_modules`.
+- Fix npm package imports under Node by shipping JavaScript entrypoints instead of relying on TypeScript-only package resolution from `node_modules`.
 
 ## 0.16.1 — 2026-04-02
 
@@ -18,14 +15,11 @@
 
 ## 0.16.0 — 2026-04-01
 
-- BREAKING: `Struct` no longer calls `Object.preventExtensions()` during
-  construction. If you want non-extensible instances, call
-  `Object.preventExtensions()` yourself after object construction.
+- BREAKING: `Struct` no longer calls `Object.preventExtensions()` during construction. If you want non-extensible instances, call `Object.preventExtensions()` yourself after object construction.
 
 ## 0.15.0 — 2026-03-27
 
-- cc3b63a — Fix fromDataView: enumerable, complete comment, optional setter,
-  readonly inference (#5)
+- cc3b63a — Fix fromDataView: enumerable, complete comment, optional setter, readonly inference (#5)
 
 ## 0.14.1 — 2026-01-20
 
@@ -41,8 +35,7 @@
 
 ## 0.13.0 — 2025-11-10
 
-- 703ee48 — Support static `.alloc` method and static `BYTE_LENGTH` field for
-  fixed-sized structs
+- 703ee48 — Support static `.alloc` method and static `BYTE_LENGTH` field for fixed-sized structs
 
 ## 0.12.0 — 2025-10-22
 

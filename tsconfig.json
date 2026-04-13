@@ -1,20 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": ["ESNext", "DOM"],
-    "outDir": "dist",
-    "verbatimModuleSyntax": true,
-    "rewriteRelativeImportExtensions": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "lib": ["es2025", "dom"],
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
     "strict": true,
-    "skipLibCheck": true
+    "types": []
   },
-  "include": [
-    "bigendian.ts",
-    "core.ts",
-    "fields.ts",
-    "mod.ts",
-    "types.ts"
-  ]
+  "exclude": ["dist", "node_modules"],
+  "include": ["**/*"]
 }

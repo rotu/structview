@@ -1,58 +1,48 @@
 # structview agent and developer notes
 
-This file holds repository workflow documentation that is mainly useful for
-contributors and coding agents.
+This file holds repository workflow documentation that is mainly useful for contributors and coding agents.
 
 ## Local git hooks
 
 Install repository hooks with:
 
 ```sh
-git config core.hooksPath .githooks
+git config core.hooksPath .vite-hooks
 ```
 
-This enables the hooks in `.githooks/`.
+This enables the hooks in `.vite-hooks/`.
 
-1. `pre-commit`: runs `deno fmt --check` and `deno lint`.
+1. `pre-commit`: runs `vp staged`.
 
 ## Fixups
 
 Run these after changing package metadata or CI/package validation behavior.
 
-1. `deno run -A scripts/sync-package-metadata.ts`: rewrite `deno.json` from
-   `package.json` metadata.
-2. `deno task validate`: verify formatting, lint, tests, JSR dry-run, npm pack
-   dry-run, and a Node install/import smoke test.
-3. `npm install --no-package-lock --ignore-scripts`: refresh local dev
-   dependencies without introducing a lockfile. This is required before local
-   `deno task validate`, `npm x vitest run`, and `bun x vitest run` commands.
+1. `vp run jsr:sync`: rewrite `jsr.json` from `package.json` metadata.
+2. `vp run validate`: verify metadata sync, Vite+ static checks, Node-side tests, and the JSR dry-run.
+3. `vp install --ignore-scripts`: refresh local dev dependencies from the current lockfile. This is required before local `vp run validate`, `vp test run`, `npm test`, and `bun run test` commands.
 
 ## Commands
 
-Operational commands are documented here so `deno.json` only carries the main
-aggregate validation entrypoint.
+Operational commands are documented here so Vite+ remains the canonical command surface: `vite.config.ts` carries the custom task entrypoints, and `package.json` only keeps lifecycle hooks.
 
-1. `deno task validate`: verify metadata sync, format, lint, tests, JSR dry-run,
-   npm pack dry-run, and the Node smoke test.
-2. `deno x vitest run`: run the Vitest suite through Deno.
-3. `npm test`: run the Node-side Vitest suite and the npm install/import smoke
-   test.
-4. `npm x vitest run`: run the Vitest suite in Node.
-5. `bun x vitest run`: run the Vitest suite in Bun.
-6. `npm run smoke:npm`: pack the current tree, install it into a temporary Node
-   project, and verify the installed package imports successfully.
-7. `deno x vitest bench --run`: run the Vitest benchmark suite.
-8. `act -W .github/workflows/ci.yml`: run the CI workflow locally when `act` is
-   installed.
+1. `vp run validate`: verify metadata sync, Vite+ static checks, tests, and the JSR dry-run.
+2. `vp run build`: emit the npm `dist/` JavaScript files with `vp pack` while preserving the source module layout.
+3. `vp run check`: verify synced metadata, formatting, and type-aware linting.
+4. `vp test run`, `npm test`, and `bun run test`: run the test suite via the canonical Vite+ command, the Node wrapper, and the Bun wrapper.
+5. `vp run bench`: run the Vitest benchmark suite.
+6. `act -W .github/workflows/ci.yml`: run the CI workflow locally when `act` is installed.
 
 ## Releases
 
-Use the manual GitHub Actions workflow `Release` to cut a release.
+Releases are prepared locally and published from CI on tag push.
 
-1. Choose a version bump (`patch`, `minor`, `major`) or provide an explicit
-   version.
-2. Ensure `CHANGELOG.md` includes a matching `## X.Y.Z` section.
-3. Run with `publish=true` to publish to JSR and npm, or `publish=false` for
-   dry-run publish checks without pushing a tag or creating a GitHub release.
-4. The release workflow uses `package.json` as the version source of truth and
-   syncs `deno.json` from it before publishing.
+1. Ensure `CHANGELOG.md` includes a matching `## X.Y.Z` section.
+2. Run `vp run release prepare <patch|minor|major|X.Y.Z>` to rehearse the release and update local version metadata. Use `vp run release dry-run <...>` if you only want the rehearsal.
+3. Review `package.json`, `jsr.json`, and `package-lock.json` when present, then create the release commit and annotated tag `vX.Y.Z` manually.
+4. Push with `git push origin HEAD --follow-tags`.
+5. The tag-triggered publish workflow validates the tagged commit and publishes to npm and JSR.
+
+## Tooling
+
+`vite.config.ts` is the single source of truth for Vite+, lint, format, staged, and pack configuration.

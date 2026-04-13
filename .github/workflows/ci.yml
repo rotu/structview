@@ -14,15 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: voidzero-dev/setup-vp@v1
         with:
-          node-version: 24
-      - run: npm install --no-package-lock --ignore-scripts
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: latest
+          cache: true
       - name: Validate source and package outputs
-        run: deno task validate
+        run: vp run validate
   test-node:
     runs-on: ubuntu-latest
     needs: validate
@@ -32,21 +28,20 @@ jobs:
         node-version: [22, 24]
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: voidzero-dev/setup-vp@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install --no-package-lock --ignore-scripts
-      - run: npm x vitest run
+          cache: true
+      - run: npm test
   test-bun:
     runs-on: ubuntu-latest
     needs: validate
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: voidzero-dev/setup-vp@v1
         with:
-          node-version: 24
-      - run: npm install --no-package-lock --ignore-scripts
+          cache: true
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: bun x vitest run
+      - run: bun run test

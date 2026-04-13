@@ -1,151 +1,25 @@
-name: Release
+name: Publish
 
 on:
-  workflow_dispatch:
-    inputs:
-      bump:
-        description: Version bump type when version is not provided
-        required: true
-        default: patch
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
-      version:
-        description: Explicit release version (overrides bump)
-        required: false
-        type: string
-      publish:
-        description: Publish to JSR and npm (false runs dry-run commands)
-        required: true
-        default: true
-        type: boolean
+  push:
+    tags:
+      - "v*"
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: publish-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
-    env:
-      RELEASE_BUMP: ${{ inputs.bump }}
-      RELEASE_VERSION: ${{ inputs.version }}
-      RELEASE_PUBLISH: ${{ inputs.publish }}
     steps:
       - uses: actions/checkout@v6
+      - uses: voidzero-dev/setup-vp@v1
         with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Install npm dev dependencies
-        run: npm install --no-package-lock --ignore-scripts
-
-      - name: Resolve release version
-        id: version
-        run: deno run -A scripts/release-helper.ts resolve >> "$GITHUB_OUTPUT"
-
-      - name: Ensure release tag does not already exist
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --tags --force
-          if git rev-parse --verify "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "::error::Tag already exists: ${{ steps.version.outputs.tag }}"
-            exit 1
-          fi
-
-      - name: Extract release notes from changelog
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          export RELEASE_NOTES_FILE="$RUNNER_TEMP/release-notes.md"
-          deno run -A scripts/release-helper.ts notes
-
-      - name: Sync version files
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version
-          deno run -A scripts/sync-package-metadata.ts
-
-      - name: Validate npm package contents
-        run: npm pack --dry-run
-
-      - name: Run npm tests
-        run: npm test
-
-      - if: env.RELEASE_PUBLISH != 'true'
-        name: Run publish dry-runs
-        run: |
-          set -euo pipefail
-          deno publish --dry-run --allow-dirty
-          npm publish --provenance --dry-run
-
-      - if: env.RELEASE_PUBLISH == 'true'
-        name: Publish to npm and JSR (idempotent)
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
-
-          if npm view "@rotu/structview@${RELEASE_VERSION}" version >/dev/null 2>&1; then
-            echo "npm already has @rotu/structview@${RELEASE_VERSION}; skipping npm publish"
-          else
-            npm publish --provenance
-          fi
-
-          if deno eval --quiet 'const packageMeta = await fetch("https://jsr.io/@rotu/structview/meta.json").then((response) => response.json()); const versions = packageMeta?.versions ?? {}; Deno.exit(Object.hasOwn(versions, Deno.env.get("RELEASE_VERSION") ?? "") ? 0 : 1);'; then
-            echo "JSR already has @rotu/structview@${RELEASE_VERSION}; skipping JSR publish"
-          else
-            deno publish --allow-dirty
-          fi
-
-      - if: env.RELEASE_PUBLISH == 'true'
-        name: Verify published version parity
-        env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
-
-          npm view "@rotu/structview@${RELEASE_VERSION}" version >/dev/null
-
-          deno eval --quiet 'const packageMeta = await fetch("https://jsr.io/@rotu/structview/meta.json").then((response) => response.json()); const versions = packageMeta?.versions ?? {}; if (!Object.hasOwn(versions, Deno.env.get("RELEASE_VERSION") ?? "")) { throw new Error(`JSR is missing version ${Deno.env.get("RELEASE_VERSION")}`); }'
-
-      - if: env.RELEASE_PUBLISH == 'true'
-        name: Commit and tag release
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add package.json deno.json
-
-          if git diff --cached --quiet; then
-            echo "No version changes to commit; tagging current HEAD"
-          else
-            git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
-            git push origin HEAD
-          fi
-
-          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
-          git push origin "${{ steps.version.outputs.tag }}"
-
-      - if: env.RELEASE_PUBLISH == 'true'
-        name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ steps.version.outputs.tag }}" --notes-file "$RUNNER_TEMP/release-notes.md"
+          cache: true
+      - name: Publish tagged release
+        run: ./scripts/release.ts publish-tag "$GITHUB_REF_NAME"

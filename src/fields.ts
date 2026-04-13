@@ -1,7 +1,4 @@
-/**
- * Factories for property descriptors representing fields in a binary struct
- * @module
- */
+/** @file Factories for property descriptors representing fields in a binary struct */
 
 import { structBytes, structDataView } from "./core.ts"
 import type {
@@ -11,9 +8,7 @@ import type {
   TypedArraySpecies,
 } from "./types.ts"
 
-/**
- * Field for a 8-bit unsigned integer
- */
+/** Field for a 8-bit unsigned integer */
 export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -24,9 +19,7 @@ export function u8(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a little-endian 16-bit unsigned integer
- */
+/** Field for a little-endian 16-bit unsigned integer */
 export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -37,9 +30,7 @@ export function u16(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a little-endian 32-bit unsigned integer
- */
+/** Field for a little-endian 32-bit unsigned integer */
 export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -50,9 +41,7 @@ export function u32(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a little-endian 64-bit unsigned integer
- */
+/** Field for a little-endian 64-bit unsigned integer */
 export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
     get() {
@@ -63,9 +52,7 @@ export function u64(fieldOffset: number): StructPropertyDescriptor<bigint> {
     },
   }
 }
-/**
- * Field for a little-endian 8-bit signed integer
- */
+/** Field for a little-endian 8-bit signed integer */
 export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -76,9 +63,7 @@ export function i8(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a little-endian 16-bit signed integer
- */
+/** Field for a little-endian 16-bit signed integer */
 export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -89,9 +74,7 @@ export function i16(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a little-endian 32-bit signed integer
- */
+/** Field for a little-endian 32-bit signed integer */
 export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -102,9 +85,7 @@ export function i32(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a little-endian 64-bit signed integer
- */
+/** Field for a little-endian 64-bit signed integer */
 export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
     get() {
@@ -116,17 +97,12 @@ export function i64(fieldOffset: number): StructPropertyDescriptor<bigint> {
   }
 }
 
-/**
- * Field for a little-endian unsigned integer of arbitrary byte length
- */
+/** Field for a little-endian unsigned integer of arbitrary byte length */
 export function biguintle(
   fieldOffset: number,
   { byteLength }: { byteLength: number },
 ): StructPropertyDescriptor<bigint> {
-  if (
-    !Number.isInteger(byteLength) ||
-    !(0 < byteLength)
-  ) {
+  if (!Number.isInteger(byteLength) || !(0 < byteLength)) {
     throw new TypeError("byteLength must be a positive integer")
   }
   return {
@@ -141,18 +117,13 @@ export function biguintle(
     set(value) {
       const dv = structDataView(this)
       for (let i = 0; i < byteLength; ++i) {
-        dv.setUint8(
-          fieldOffset + i,
-          Number((value >> BigInt(8 * i)) & 0xffn),
-        )
+        dv.setUint8(fieldOffset + i, Number((value >> BigInt(8 * i)) & 0xffn))
       }
     },
   }
 }
 
-/**
- * Field for a little-endian signed integer of arbitrary byte length
- */
+/** Field for a little-endian signed integer of arbitrary byte length */
 export function bigintle(
   offset: number,
   options: { byteLength: number },
@@ -170,18 +141,13 @@ export function bigintle(
     set(value) {
       const dv = structDataView(this)
       for (let i = 0; i < byteLength; ++i) {
-        dv.setUint8(
-          offset + i,
-          Number((value >> BigInt(8 * i)) & 0xffn),
-        )
+        dv.setUint8(offset + i, Number((value >> BigInt(8 * i)) & 0xffn))
       }
     },
   }
 }
 
-/**
- * Field for a little-endian 16-bit binary float (float16_t)
- */
+/** Field for a little-endian 16-bit binary float (float16_t) */
 export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
   if (
     typeof DataView.prototype.getFloat16 !== "function" ||
@@ -199,9 +165,7 @@ export function f16(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 
-/**
- * Field for a little-endian 32-bit binary float (float32_t)
- */
+/** Field for a little-endian 32-bit binary float (float32_t) */
 export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -213,9 +177,7 @@ export function f32(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 
-/**
- * Field for a little-endian 64-bit binary float (float64_t)
- */
+/** Field for a little-endian 64-bit binary float (float64_t) */
 export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -228,31 +190,26 @@ export function f64(fieldOffset: number): StructPropertyDescriptor<number> {
 }
 
 /**
- * Field for a UTF-8 string. When `byteLength` is provided, covers exactly that
- * many bytes starting at `fieldOffset`. When omitted, extends from `fieldOffset`
- * to the end of the struct's buffer (variable-length).
+ * Field for a UTF-8 string. When `byteLength` is provided, covers exactly that many bytes starting
+ * at `fieldOffset`. When omitted, extends from `fieldOffset` to the end of the struct's buffer
+ * (variable-length).
  */
-export function string(
-  fieldOffset: number,
-  byteLength?: number,
-): StructPropertyDescriptor<string> {
+export function string(fieldOffset: number, byteLength?: number): StructPropertyDescriptor<string> {
   const TEXT_DECODER = new TextDecoder()
   const TEXT_ENCODER = new TextEncoder()
   return {
     get() {
-      const end = byteLength !== undefined
-        ? fieldOffset + byteLength
-        : undefined
-      const str = TEXT_DECODER.decode(
-        structBytes(this, fieldOffset, end),
-      )
-      // trim all trailing null characters
-      return str.replace(/\0+$/, "")
+      const end = byteLength !== undefined ? fieldOffset + byteLength : undefined
+      const str = TEXT_DECODER.decode(structBytes(this, fieldOffset, end))
+      let trimmedLength = str.length
+      while (trimmedLength > 0 && str.charCodeAt(trimmedLength - 1) === 0) {
+        trimmedLength -= 1
+      }
+
+      return str.slice(0, trimmedLength)
     },
     set(value) {
-      const end = byteLength !== undefined
-        ? fieldOffset + byteLength
-        : undefined
+      const end = byteLength !== undefined ? fieldOffset + byteLength : undefined
       const bytes = structBytes(this, fieldOffset, end)
       bytes.fill(0)
       TEXT_ENCODER.encodeInto(value, bytes)
@@ -261,32 +218,24 @@ export function string(
 }
 
 /**
- * Field for a live `Uint8Array` view into the struct's buffer. When
- * `byteLength` is provided, covers exactly that many bytes starting at
- * `fieldOffset`. When omitted, extends from `fieldOffset` to the end of the
- * struct's buffer (variable-length). The field is read-only; mutations happen
- * through the returned `Uint8Array` directly.
+ * Field for a live `Uint8Array` view into the struct's buffer. When `byteLength` is provided,
+ * covers exactly that many bytes starting at `fieldOffset`. When omitted, extends from
+ * `fieldOffset` to the end of the struct's buffer (variable-length). The field is read-only;
+ * mutations happen through the returned `Uint8Array` directly.
  */
 export function bytes(
   fieldOffset: number,
   byteLength?: number,
-):
-  & StructPropertyDescriptor<Uint8Array>
-  & ReadOnlyAccessorDescriptor<Uint8Array> {
+): StructPropertyDescriptor<Uint8Array> & ReadOnlyAccessorDescriptor<Uint8Array> {
   return {
     get() {
-      const end = byteLength !== undefined
-        ? fieldOffset + byteLength
-        : undefined
+      const end = byteLength !== undefined ? fieldOffset + byteLength : undefined
       return structBytes(this, fieldOffset, end)
     },
   }
 }
 
-/**
- * Field for a boolean stored in a byte (0 = false, nonzero = true)
- * True will be stored as 1
- */
+/** Field for a boolean stored in a byte (0 = false, nonzero = true) True will be stored as 1 */
 export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
   return {
     get() {
@@ -300,9 +249,10 @@ export function bool(fieldOffset: number): StructPropertyDescriptor<boolean> {
 
 /**
  * Define a descriptor based on a dataview of the struct
- * @param fieldGetter function which, given a dataview, returns the field value
- * @param fieldSetter optional function which, given a dataview and a value, sets the field value
- * @returns an enumerable property descriptor; readonly if no setter is provided
+ *
+ * @param fieldGetter Function which, given a dataview, returns the field value
+ * @param fieldSetter Optional function which, given a dataview and a value, sets the field value
+ * @returns An enumerable property descriptor; readonly if no setter is provided
  */
 export function fromDataView<T>(
   fieldGetter: (dv: DataView) => T,
@@ -339,29 +289,24 @@ export function fromDataView<T>(
 
 /**
  * Field for an embedded struct
- * @param ctor constructor for the inner struct
- * @param byteOffset where the inner struct starts relative to the outer struct
- * @param bytelength the length in bytes of the inner struct
- * @returns property descriptor for a struct
+ *
+ * @param ctor Constructor for the inner struct
+ * @param byteOffset Where the inner struct starts relative to the outer struct
+ * @param bytelength The length in bytes of the inner struct
+ * @returns Property descriptor for a struct
  */
-export function substruct<
-  T extends object,
->(
+export function substruct<T extends object>(
   ctor: StructConstructor<T>,
   byteOffset?: number,
   bytelength?: number,
 ): StructPropertyDescriptor<T> & ReadOnlyAccessorDescriptor<T> {
-  return fromDataView(
-    (dv) => {
-      const offset2 = dv.byteOffset + (byteOffset ?? 0)
-      const bytelength2 = bytelength ?? (dv.byteLength - (byteOffset ?? 0))
-      return Reflect.construct(ctor, [{
-        buffer: dv.buffer,
-        byteOffset: offset2,
-        byteLength: bytelength2,
-      }])
-    },
-  )
+  return fromDataView((dv) => {
+    const offset2 = dv.byteOffset + (byteOffset ?? 0)
+    const bytelength2 = bytelength ?? dv.byteLength - (byteOffset ?? 0)
+    return Reflect.construct(ctor, [
+      { buffer: dv.buffer, byteOffset: offset2, byteLength: bytelength2 },
+    ])
+  })
 }
 
 /**
@@ -369,16 +314,16 @@ export function substruct<
  *
  * @remarks
  *
- * I'm not totally happy with this.
- * - TypedArray does not support endianness.
- * - Changing the length property of the parent struct will not change the length of the returned value. `a=x.ar; x.arlength=2;` will not change a's length (though it will still be a live view of the underlying buffer).
- *
- * @param fieldOffset  where the array starts relative to the parent struct
+ *   I'm not totally happy with this. - TypedArray does not support endianness. - Changing the
+ *   length property of the parent struct will not change the length of the returned value. `a=x.ar;
+ *   x.arlength=2;` will not change a's length (though it will still be a live view of the
+ *   underlying buffer).
+ * @param fieldOffset Where the array starts relative to the parent struct
  */
 export function typedArray<T>(
   fieldOffset: number,
   kwargs: {
-    /** length or property name for the length of the array */
+    /** Length or property name for the length of the array */
     readonly length: number | string | undefined
     /** TypedArray constructor */
     readonly species: TypedArraySpecies<T>
@@ -390,26 +335,18 @@ export function typedArray<T>(
       const dv = structDataView(this)
       let lengthValue: number | undefined
       if (typeof length === "undefined") {
-        lengthValue = Math.floor(
-          (dv.byteLength - fieldOffset) / species.BYTES_PER_ELEMENT,
-        )
+        lengthValue = Math.floor((dv.byteLength - fieldOffset) / species.BYTES_PER_ELEMENT)
       } else if (typeof length === "number") {
         lengthValue = length
       } else if (typeof length === "string") {
         lengthValue = Reflect.get(this, length)
       }
-      return new species(
-        dv.buffer,
-        dv.byteOffset + fieldOffset,
-        lengthValue,
-      )
+      return new species(dv.buffer, dv.byteOffset + fieldOffset, lengthValue)
     },
   }
 }
 
-/**
- * Field for a big-endian 16-bit unsigned integer
- */
+/** Field for a big-endian 16-bit unsigned integer */
 export function u16be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -420,9 +357,7 @@ export function u16be(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a big-endian 32-bit unsigned integer
- */
+/** Field for a big-endian 32-bit unsigned integer */
 export function u32be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -433,9 +368,7 @@ export function u32be(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a big-endian 64-bit unsigned integer
- */
+/** Field for a big-endian 64-bit unsigned integer */
 export function u64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
     get() {
@@ -446,9 +379,7 @@ export function u64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
     },
   }
 }
-/**
- * Field for a big-endian 16-bit signed integer
- */
+/** Field for a big-endian 16-bit signed integer */
 export function i16be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -459,9 +390,7 @@ export function i16be(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a big-endian 32-bit signed integer
- */
+/** Field for a big-endian 32-bit signed integer */
 export function i32be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -472,9 +401,7 @@ export function i32be(fieldOffset: number): StructPropertyDescriptor<number> {
     },
   }
 }
-/**
- * Field for a big-endian 64-bit signed integer
- */
+/** Field for a big-endian 64-bit signed integer */
 export function i64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
   return {
     get() {
@@ -486,9 +413,7 @@ export function i64be(fieldOffset: number): StructPropertyDescriptor<bigint> {
   }
 }
 
-/**
- * Field for a big-endian 16-bit binary float (float16_t)
- */
+/** Field for a big-endian 16-bit binary float (float16_t) */
 export function f16be(fieldOffset: number): StructPropertyDescriptor<number> {
   if (
     typeof DataView.prototype.getFloat16 !== "function" ||
@@ -506,9 +431,7 @@ export function f16be(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 
-/**
- * Field for a big-endian 32-bit binary float (float32_t)
- */
+/** Field for a big-endian 32-bit binary float (float32_t) */
 export function f32be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
@@ -520,9 +443,7 @@ export function f32be(fieldOffset: number): StructPropertyDescriptor<number> {
   }
 }
 
-/**
- * Field for a big-endian 64-bit binary float (float64_t)
- */
+/** Field for a big-endian 64-bit binary float (float64_t) */
 export function f64be(fieldOffset: number): StructPropertyDescriptor<number> {
   return {
     get() {
